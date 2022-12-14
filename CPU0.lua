@@ -132,7 +132,7 @@ end
 -- ######## MAIN GAME LOOP ########
 function update()
     debugPrint()
-    
+
     -- clears the screen
     vid:Clear(color.white)
     selectorPos = vec2(selposX,selposY)
@@ -140,11 +140,6 @@ function update()
     
     -- increase the counter by the CPU's DeltaTime
     deltaCounter += gdt.CPU0.DeltaTime
-    
-    if but0.ButtonDown then
-        digimonColision()
-        digimonposX += 20
-    end
     
     -- this function will draw the menu sprites
     drawMenuSprites()
@@ -154,16 +149,24 @@ function update()
 
     -- does colision for digimon
     digimonColision()
-
+    
     -- draws the digimon
     drawDigimon()
-    
     
     
     
     -- checks if the button is pressed down to cycle tru menu
     if but2.ButtonDown then
         CursorHandler()
+				
+    end
+    
+    if but0.ButtonDown then
+        
+    end
+
+    if but1.ButtonDown then
+        
     end
     
     
@@ -177,7 +180,8 @@ function update()
         deltaCounter -= frameDuration
         frameNumber += 1
         digimonMover()
-        
-    end
+				digimonHandler()
+							
+		end
 	  
 end
