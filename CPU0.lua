@@ -20,8 +20,6 @@ local frameNumber = 0
 
 -- keep track of menu 
 local menuPos = 0
-
--- set a max for menu pos
 local maxMenuPos = 9
 
 -- keep track of position of selector
@@ -99,26 +97,12 @@ function digimonMover()
         digimonposX -= 5
     end
     
-    -- we check if we moved out of bounds and reset it to wall values
-    if digimonposX < 0 then
-        digimonposX = 2
-    end
-    if digimonposX > 71 then
-        digimonposX = 59
-    end
     
 end
 
 -- this function will handdle the digimon sprites
 function drawDigimon()
 
-    -- we check if we moved out of bounds and reset it to wall values
-    if digimonposX < 0 then
-        digimonposX = 2
-    end
-    if digimonposX > 71 then
-        digimonposX = 59
-    end
 
     -- if its looking left or right we use diferent sprites 
     if looking < 0.5 then 
@@ -128,35 +112,53 @@ function drawDigimon()
     end
 end
 
+--  we do some colision checking in the rectangle
+function digimonColision()
+   -- we check if we moved out of bounds and reset it to wall values
+   if digimonposX < 0 then
+        digimonposX = 2
+    end
+    if digimonposX > 71 then
+       digimonposX = 59
+    end
+end
 
+-- prints the debug info
+function debugPrint()
+print("  Digimon x Pos:" .. digimonposX .. "\n","Digimon y Pos:" .. digimonposY.. "\n", "Current Menu:" .. menuPos)
+end
 
 
 -- ######## MAIN GAME LOOP ########
 function update()
--- clears the screen
-vid:Clear(color.white)
+    debugPrint()
+    
+    -- clears the screen
+    vid:Clear(color.white)
+    selectorPos = vec2(selposX,selposY)
+    DigimonPos = vec2(digimonposX, digimonposY)
+    
+    -- increase the counter by the CPU's DeltaTime
+    deltaCounter += gdt.CPU0.DeltaTime
+    
+    if but0.ButtonDown then
+        digimonColision()
+        digimonposX += 20
+    end
+    
+    -- this function will draw the menu sprites
+    drawMenuSprites()
+    
+    -- draws the cursor
+    drawSelSprite()
 
-print("Digimon x Pos:" .. digimonposX .. "\n","Digimon y Pos:" .. digimonposY)
-selectorPos = vec2(selposX,selposY)
-DigimonPos = vec2(digimonposX, digimonposY)
+    -- does colision for digimon
+    digimonColision()
 
--- increase the counter by the CPU's DeltaTime
-deltaCounter += gdt.CPU0.DeltaTime
-
-if but0.ButtonDown then
-digimonposX += 20
-end
-
--- this function will draw the menu sprites
-drawMenuSprites()
-
--- draws the cursor
-drawSelSprite()
-
--- draws the digimon
-drawDigimon()
-
-
+    -- draws the digimon
+    drawDigimon()
+    
+    
     
     
     -- checks if the button is pressed down to cycle tru menu
