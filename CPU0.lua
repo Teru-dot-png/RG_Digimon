@@ -27,11 +27,15 @@ local selectorPos:vec2 = vec2(0,5)
 local selposX = 0
 local selposY = 5
 
--- keep track of digimon position
+-- keep track of digimon position and stats
 local DigimonPos:vec2 = vec2(0,0)
 local digimonposX = 35
 local digimonposY = 25
 local looking = 0
+local poopR = 0
+local poopValue = 0
+local poop = false
+local poopAnim = 0
 
 -- this will draw menu sprites
 function drawMenuSprites()
@@ -55,6 +59,10 @@ vid:DrawSprite(vec2(50,50), menuSprites, 3, 1, color.white, color.clear)
 vid:DrawSprite(vec2(65,50), menuSprites, 4, 1, color.white, color.clear)
 end
 
+-- does the menu functions
+ function menuHandling(  )
+    
+ end
 
 -- draws the cursor
 function drawSelSprite()
@@ -100,6 +108,26 @@ function digimonMover()
     
 end
 
+-- this function will handdle the digimon stats and needs
+function digimonHandler()
+    poopR = math.random( 1, 11150 )
+
+    if poopR == 46 then
+    poop = true
+    poopValue += 1
+    end
+
+    if poop == true then
+
+        drawPoop()
+    end
+
+end
+
+function drawPoop()
+    vid:DrawSprite(vec2(35,35), menuSprites, 6, poopAnim, color.white, color.clear)
+end
+
 -- this function will handdle the digimon sprites
 function drawDigimon()
 
@@ -125,7 +153,12 @@ end
 
 -- prints the debug info
 function debugPrint()
-print("  Digimon x Pos:" .. digimonposX .. "\n","Digimon y Pos:" .. digimonposY.. "\n", "Current Menu:" .. menuPos)
+print(
+"  Digimon x Pos:" .. digimonposX .. "\n",
+"Digimon y Pos:" .. digimonposY.. "\n",
+"Current Menu:" .. menuPos .. "\n",
+"poop data:" .. poopValue
+)
 end
 
 
@@ -146,13 +179,14 @@ function update()
     
     -- draws the cursor
     drawSelSprite()
-
+    
     -- does colision for digimon
     digimonColision()
     
     -- draws the digimon
     drawDigimon()
     
+    digimonHandler()
     
     
     -- checks if the button is pressed down to cycle tru menu
@@ -162,7 +196,7 @@ function update()
     end
     
     if but0.ButtonDown then
-        
+        poop = true
     end
 
     if but1.ButtonDown then
@@ -179,8 +213,8 @@ function update()
     while (deltaCounter >= frameDuration) do
         deltaCounter -= frameDuration
         frameNumber += 1
+        poopAnim = math.random(2, 3)
         digimonMover()
-				digimonHandler()
 							
 		end
 	  
