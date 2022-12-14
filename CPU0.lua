@@ -1,109 +1,181 @@
 -- Assets
-local spriteSheet:SpriteSheet = gdt.ROM.User.SpriteSheets.Digimon1
+local menuSprites:SpriteSheet = gdt.ROM.User.SpriteSheets.Digimon1
+local digimonSprites:SpriteSheet = gdt.ROM.User.SpriteSheets.digimonNIGHTMARE1
+local digimonSpritesFlip:SpriteSheet = gdt.ROM.User.SpriteSheets.digimonNIGHTMARE1Flip
+
 -- Hardware
-local video:VideoChip = gdt.VideoChip0
+local vid:VideoChip = gdt.VideoChip0
 local but0 = gdt.LedButton0
 local but1 = gdt.LedButton1
 local but2 = gdt.LedButton2
+
 -- advance one frame
-local frameDuration = 1
+local frameDuration = 1.5
+
 -- this will keep track of DeltaTime
 local deltaCounter = 0
+
 -- keep track of the current frame
 local frameNumber = 0 
+
 -- keep track of menu 
 local menuPos = 0
+
 -- set a max for menu pos
 local maxMenuPos = 9
 
 -- keep track of position of selector
 local selectorPos:vec2 = vec2(0,5)
-
 local selposX = 0
 local selposY = 5
+
+-- keep track of digimon position
+local DigimonPos:vec2 = vec2(0,0)
+local digimonposX = 35
+local digimonposY = 25
+local looking = 0
+
 -- this will draw menu sprites
 function drawMenuSprites()
+
+-- makes the menu borders
+vid.DrawRect(vid, vec2(5, 15), vec2(72, 48), color.black)
+
+
 -- Draws the top menu
-video:DrawSprite(vec2(5,5), spriteSheet, 0, 0, color.white, color.clear)
-video:DrawSprite(vec2(20,5), spriteSheet, 1, 0, color.white, color.clear)
-video:DrawSprite(vec2(35,5), spriteSheet, 2, 0, color.white, color.clear)
-video:DrawSprite(vec2(50,5), spriteSheet, 3, 0, color.white, color.clear)
-video:DrawSprite(vec2(65,5), spriteSheet, 4, 0, color.white, color.clear)
+vid:DrawSprite(vec2(5,5), menuSprites, 0, 0, color.white, color.clear)
+vid:DrawSprite(vec2(20,5), menuSprites, 1, 0, color.white, color.clear)
+vid:DrawSprite(vec2(35,5), menuSprites, 2, 0, color.white, color.clear)
+vid:DrawSprite(vec2(50,5), menuSprites, 3, 0, color.white, color.clear)
+vid:DrawSprite(vec2(65,5), menuSprites, 4, 0, color.white, color.clear)
 
 -- draw the bottom menu
-video:DrawSprite(vec2(5,50), spriteSheet, 0, 1, color.white, color.clear)
-video:DrawSprite(vec2(20,50), spriteSheet, 1, 1, color.white, color.clear)
-video:DrawSprite(vec2(35,50), spriteSheet, 2, 1, color.white, color.clear)
-video:DrawSprite(vec2(50,50), spriteSheet, 3, 1, color.white, color.clear)
-video:DrawSprite(vec2(65,50), spriteSheet, 4, 1, color.white, color.clear)
+vid:DrawSprite(vec2(5,50), menuSprites, 0, 1, color.white, color.clear)
+vid:DrawSprite(vec2(20,50), menuSprites, 1, 1, color.white, color.clear)
+vid:DrawSprite(vec2(35,50), menuSprites, 2, 1, color.white, color.clear)
+vid:DrawSprite(vec2(50,50), menuSprites, 3, 1, color.white, color.clear)
+vid:DrawSprite(vec2(65,50), menuSprites, 4, 1, color.white, color.clear)
 end
 
 
-
+-- draws the cursor
 function drawSelSprite()
-    
-    
-    video:DrawSprite(selectorPos, spriteSheet, 5, 1, color.white, color.clear)
-    
+    vid:DrawSprite(selectorPos, menuSprites, 5, 1, color.white, color.clear)
 end
 
 function CursorHandler()
-    menuPos += 1
-    selposX += 15
+    -- everytime the button is clicked
+    menuPos += 1 -- menu position add 1
+    selposX += 15 -- move the position to 15 units
+
+    -- if the cursor position is over the screen we go to next
     if selposX > 60 then
         selposY = 50
         selposX = 0
     end      
-    -- if its over the max we go bac
+
+    -- if its over the max options we go bac
     if menuPos > maxMenuPos then
+        -- reseting positions
         menuPos = 0
         selposX = 0
-        selposY = 5
+        selposY = 5  
+    end
+end
+
+-- this function will move the digimon once and a while
+function digimonMover()
+    
+    -- random number for looking left or right
+    looking = math.random()
+    
+    -- if its above 0.5 we move it 5 units else we go back 5 units
+    if looking < 0.5 then
         
         
+        digimonposX += 5 
+    else
+        
+        digimonposX -= 5
+    end
+    
+    -- we check if we moved out of bounds and reset it to wall values
+    if digimonposX < 0 then
+        digimonposX = 2
+    end
+    if digimonposX > 71 then
+        digimonposX = 59
     end
     
 end
 
--- this will get called every 0.5 seconds
-function frame()
+-- this function will handdle the digimon sprites
+function drawDigimon()
 
+    -- we check if we moved out of bounds and reset it to wall values
+    if digimonposX < 0 then
+        digimonposX = 2
+    end
+    if digimonposX > 71 then
+        digimonposX = 59
+    end
 
--- increment the frame number
-frameNumber += 1
-
+    -- if its looking left or right we use diferent sprites 
+    if looking < 0.5 then 
+        vid:DrawSprite(DigimonPos, digimonSpritesFlip, 0, 1, color.white, color.clear)
+    else
+        vid:DrawSprite(DigimonPos, digimonSprites, 0, 1, color.white, color.clear)
+    end
 end
+
+
+
+
 -- ######## MAIN GAME LOOP ########
 function update()
-print("Cursor x Pos:" .. selposX,"Cursor y Pos:" .. selposY)
+-- clears the screen
+vid:Clear(color.white)
+
+print("Digimon x Pos:" .. digimonposX .. "\n","Digimon y Pos:" .. digimonposY)
 selectorPos = vec2(selposX,selposY)
+DigimonPos = vec2(digimonposX, digimonposY)
 
 -- increase the counter by the CPU's DeltaTime
-    deltaCounter += gdt.CPU0.DeltaTime
-   
+deltaCounter += gdt.CPU0.DeltaTime
+
+if but0.ButtonDown then
+digimonposX += 20
+end
+
 -- this function will draw the menu sprites
-    drawMenuSprites()
+drawMenuSprites()
 
--- everytime the button is pressed we change the cursor pos
-    drawSelSprite()
+-- draws the cursor
+drawSelSprite()
 
--- checks if the button is pressed down to cycle tru menu
-    if but0.ButtonDown then
+-- draws the digimon
+drawDigimon()
+
+
+    
+    
+    -- checks if the button is pressed down to cycle tru menu
+    if but2.ButtonDown then
         CursorHandler()
     end
-		
-			
-					
-									
+    
+    
+    
+    
     -- we run a while loop for however many times the delta counter is greater
     -- than the duration of one frame, such that if for some reason the counter
     -- has gone past over one frame duration, we run our frame loop however many
     -- times necessary to keep the logic tied to the timer.
     while (deltaCounter >= frameDuration) do
         deltaCounter -= frameDuration
-        video:Clear(color.white)
-        frame()
-
+        frameNumber += 1
+        digimonMover()
+        
     end
 	  
 end
