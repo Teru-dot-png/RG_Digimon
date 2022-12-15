@@ -97,8 +97,8 @@ local menu = {
 -- keep track of position of selector
 local cursorPos:vec2 = vec2(0,5)
 local cursor = {
-  cursor.posX = 0,
-  cursor.posY = 5
+  posX = 0,
+  posY = 5
 }
 
 -- keep track of digimon position and stats
