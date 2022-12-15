@@ -79,25 +79,35 @@ end
 
 -- define the if-else statement
     if menuPos == 0 then
+      -- # info button
       print("Menu position 0 selected")
     elseif menuPos == 1 then
+      -- # feed button
       print("Menu position 1 selected")
     elseif menuPos == 2 then
+      -- # train button
       print("Menu position 2 selected")
     elseif menuPos == 3 then
+      -- # challange button
       print("Menu position 3 selected")
     elseif menuPos == 4 then
+      -- # flush button
       print("Menu position 4 selected")
       poopFlushQueue = 1
     elseif menuPos == 5 then
+      -- # lights on/off button
       print("Menu position 5 selected")
     elseif menuPos == 6 then
+      -- # patch up / heal from sick button
       print("Menu position 6 selected")
     elseif menuPos == 7 then
+      -- train int digimon button
       print("Menu position 7 selected")
     elseif menuPos == 8 then
+      -- multiplayer fight button
       print("Menu position 8 selected")
     elseif menuPos == 9 then
+      -- Wip does nothing cause i dont remenber what it does
       print("Menu position 9 selected")
     end
  end
