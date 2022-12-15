@@ -5,6 +5,7 @@ local digimonSpritesFlip:SpriteSheet = gdt.ROM.User.SpriteSheets.digimonNIGHTMAR
 
 -- Hardware
 local vid:VideoChip = gdt.VideoChip0
+local web:Wifi = gdt.Wifi0
 local but0 = gdt.LedButton0
 local but1 = gdt.LedButton1
 local but2 = gdt.LedButton2
@@ -21,6 +22,7 @@ local frameNumber = 0
 -- keep track of menu 
 local menuPos = 0
 local maxMenuPos = 9
+local isInsideMenu
 
 -- keep track of position of selector
 local selectorPos:vec2 = vec2(0,5)
@@ -32,10 +34,20 @@ local DigimonPos:vec2 = vec2(0,0)
 local digimonposX = 35
 local digimonposY = 25
 local looking = 0
+
+-- as much as i dont want to we need to keep track of poop
 local poopR = 0
 local poopValue = 0
 local poop = false
 local poopAnim = 0
+local poopFlushQueue = 0
+local flushing = false
+local poopPos = vec2(0, 0)
+local PoopPosX = 35
+local PoopPosY = 35
+local flushPos = vec2(0, 0)
+local flushPosX = 0
+local flushPosY = 0
 
 -- this will draw menu sprites
 function drawMenuSprites()
@@ -59,9 +71,33 @@ vid:DrawSprite(vec2(50,50), menuSprites, 3, 1, color.white, color.clear)
 vid:DrawSprite(vec2(65,50), menuSprites, 4, 1, color.white, color.clear)
 end
 
+
 -- does the menu functions
- function menuHandling(  )
-    
+ function menuSelect()
+
+-- define the if-else statement
+    if menuPos == 0 then
+      print("Menu position 0 selected")
+    elseif menuPos == 1 then
+      print("Menu position 1 selected")
+    elseif menuPos == 2 then
+      print("Menu position 2 selected")
+    elseif menuPos == 3 then
+      print("Menu position 3 selected")
+    elseif menuPos == 4 then
+      print("Menu position 4 selected")
+      poopFlushQueue = 1
+    elseif menuPos == 5 then
+      print("Menu position 5 selected")
+    elseif menuPos == 6 then
+      print("Menu position 6 selected")
+    elseif menuPos == 7 then
+      print("Menu position 7 selected")
+    elseif menuPos == 8 then
+      print("Menu position 8 selected")
+    elseif menuPos == 9 then
+      print("Menu position 9 selected")
+    end
  end
 
 -- draws the cursor
@@ -110,22 +146,36 @@ end
 
 -- this function will handdle the digimon stats and needs
 function digimonHandler()
-    poopR = math.random( 1, 11150 )
-
-    if poopR == 46 then
-    poop = true
-    poopValue += 1
-    end
-
-    if poop == true then
-
-        drawPoop()
-    end
+    
 
 end
 
+
+--this is like a vibe check but to see if you shat yourself
+function poopCheck()
+    poopR = math.random( 1, 3150 )
+
+    if poopR == 500 or poopR == 200 then
+    poop = true
+    poopValue += 1
+    end
+end
+
+-- this function will draw poop if digimon has done the peepee poopoo caacaa
 function drawPoop()
-    vid:DrawSprite(vec2(35,35), menuSprites, 6, poopAnim, color.white, color.clear)
+    if poop == true then
+    vid:DrawSprite(poopPos, menuSprites, 6, poopAnim, color.white, color.clear)
+    end
+end
+
+function flushPoop()
+    if poopFlushQueue > 0.5 then
+
+
+    vid:DrawSprite(flushPos, menuSprites, 4, 3, color.white, color.clear)
+
+
+    end
 end
 
 -- this function will handdle the digimon sprites
@@ -168,9 +218,13 @@ function update()
 
     -- clears the screen
     vid:Clear(color.white)
+
+    -- set according possitions
     selectorPos = vec2(selposX,selposY)
     DigimonPos = vec2(digimonposX, digimonposY)
-    
+    poopPos = vec2(PoopPosX, PoopPosY)
+    flushPos = vec2(flushPosX, flushPosY)
+
     -- increase the counter by the CPU's DeltaTime
     deltaCounter += gdt.CPU0.DeltaTime
     
@@ -186,8 +240,12 @@ function update()
     -- draws the digimon
     drawDigimon()
     
+    -- handdler for digimon stuff
     digimonHandler()
     
+    -- draw funny poopoo
+    drawPoop()
+
     
     -- checks if the button is pressed down to cycle tru menu
     if but2.ButtonDown then
@@ -195,13 +253,14 @@ function update()
 				
     end
     
+    if but1.ButtonDown then
+        menuSelect()
+    end
+
     if but0.ButtonDown then
         poop = true
     end
 
-    if but1.ButtonDown then
-        
-    end
     
     
     
