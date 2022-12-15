@@ -10,47 +10,108 @@ local but0 = gdt.LedButton0
 local but1 = gdt.LedButton1
 local but2 = gdt.LedButton2
 
+
 -- advance one frame
-local frameDuration = 1
-
 -- this will keep track of DeltaTime
-local deltaCounter = 0
-
 -- keep track of the current frame
-local frameNumber = 0 
+local deltaCounter = 0
+local timeDlt = {
+ frameDuration = 1,
+ frameNum = 0
+}
 
 -- Time data
-local seconds = 0
-local minutes = 0
-local hours = 0
-local days = 0
-local weeks = 0
-local months = 0
-local years = 0
-
-
-
+local time = {
+   seconds = 0,
+   minutes = 0,
+   hours = 0,
+   days = 0,
+   weeks = 0,
+   months = 0,
+   years = 0
+  
+}
 
 
 -- keep track of menu 
-local menuPos = 0
-local maxMenuPos = 9
-local isInsideMenu = false
+local menu = { 
+  current = 0,
+  maxItems = 9,
+  isInsideMenu = false,
+  isUnselected = false,
+
+  nextButton = function(self)
+    if self.current < self.maxItems then
+      self.current += 1
+    elseif self.current > self.maxItems then
+    self.current = 0
+    end
+  end,
+
+  -- Define an array of menu items and their associated actions.
+  items = {
+    {name = "info", action = function() 
+      print("Menu position 0 selected") 
+    end},
+    {name = "feed", action = function() 
+      print("Menu position 1 selected") 
+    end},
+    {name = "train", action = function() 
+      print("Menu position 2 selected") 
+    end},
+    {name = "challange", action = function() 
+      print("Menu position 3 selected") 
+    end},
+    {name = "flush", action = function() 
+      print("Menu position 4 selected") 
+      poopFlushQueue = 1 
+    end},
+    {name = "lights", action = function() 
+      print("Menu position 5 selected") 
+    end},
+    {name = "patch", action = function() 
+      print("Menu position 6 selected") 
+    end},
+    {name = "int train", action = function() 
+      print("Menu position 7 selected") 
+    end},
+    {name = "0nline", action = function() 
+      print("Menu position 8 selected") 
+    end},
+    {name = "wip", action = function() 
+      print("Menu position 9 selected") 
+    end},
+  },
+
+  -- This is a method of the `menu` object. It iterates over the `items` array and
+  -- executes the appropriate action based on the value of the `current` property.
+  select = function(self)
+    for i, item in ipairs(self.items) do
+      if self.current == i - 1 then
+        item.action()
+      end
+    end
+  end
+}
 
 -- keep track of position of selector
-local selectorPos:vec2 = vec2(0,5)
-local selposX = 0
-local selposY = 5
+local cursorPos:vec2 = vec2(0,5)
+local cursor = {
+  cursor.posX = 0,
+  cursor.posY = 5
+}
 
 -- keep track of digimon position and stats
 local DigimonPos:vec2 = vec2(0,0)
-local digimonposX = 35
-local digimonposY = 25
-local looking = 0
-local sleeping = false
+local digimon = {
+   posX = 35,
+   posY = 25,
+   looking = 0,
+   sleeping = false
+}
 
--- keep track of lights
-local lightsOff = false
+-- keep track of room info
+local lights = false
 
 -- as much as i dont want to we need to keep track of poop
 local poopR = 0
@@ -70,31 +131,31 @@ local flushPosY = 16
 
 function timeTracker()
   -- seconds
-  seconds += 1
-  if seconds == 60 then
-    seconds = 0
+  time.seconds += 1
+  if time.seconds == 60 then
+    time.seconds = 0
     -- minutes
-    minutes += 1
-    if minutes == 60 then
-      minutes = 0
+    time.minutes += 1
+    if time.minutes == 60 then
+      time.minutes = 0
       -- hours
-      hours += 1
-      if hours == 24 then
-        hours = 0
+      time.hours += 1
+      if time.hours == 24 then
+        time.hours = 0
         -- days
-        days += 1
-        if days == 7 then
-          days = 0
+        time.days += 1
+        if time.days == 7 then
+          time.days = 0
           -- weeks
-          weeks += 1
-          if weeks == 4 then
-            weeks = 0
+          time.weeks += 1
+          if time.weeks == 4 then
+            time.weeks = 0
             -- month
-            months += 1
-            if months == 12 then
-              month = 0
+            time.months += 1
+            if time.months == 12 then
+              months = 0
               -- years
-              years += 1
+              time.years += 1
             end
           end
         end
@@ -104,9 +165,9 @@ function timeTracker()
 end
 
 function deltaTimeHandler()
-  while (deltaCounter >= frameDuration) do
-    deltaCounter -= frameDuration
-    frameNumber += 1
+  while (deltaCounter >= timeDlt.frameDuration) do
+    deltaCounter -= timeDlt.frameDuration
+    timeDlt.frameNum += 1
     timeTracker()
     poopAnim = math.random(2, 3)
     digimonMover()
@@ -117,86 +178,47 @@ end
 -- this will draw menu sprites
 function drawMenuSprites()
 
--- makes the menu borders
-vid.DrawRect(vid, vec2(5, 15), vec2(72, 48), color.black)
+  -- makes the menu borders
+  vid.DrawRect(vid, vec2(5, 15), vec2(72, 48), color.black)
 
 
--- Draws the top menu
-vid:DrawSprite(vec2(5,5), menuSprites, 0, 0, color.white, color.clear)
-vid:DrawSprite(vec2(20,5), menuSprites, 1, 0, color.white, color.clear)
-vid:DrawSprite(vec2(35,5), menuSprites, 2, 0, color.white, color.clear)
-vid:DrawSprite(vec2(50,5), menuSprites, 3, 0, color.white, color.clear)
-vid:DrawSprite(vec2(65,5), menuSprites, 4, 0, color.white, color.clear)
+  -- Draws the top menu
+  vid:DrawSprite(vec2(5,5), menuSprites, 0, 0, color.white, color.clear)
+  vid:DrawSprite(vec2(20,5), menuSprites, 1, 0, color.white, color.clear)
+  vid:DrawSprite(vec2(35,5), menuSprites, 2, 0, color.white, color.clear)
+  vid:DrawSprite(vec2(50,5), menuSprites, 3, 0, color.white, color.clear)
+  vid:DrawSprite(vec2(65,5), menuSprites, 4, 0, color.white, color.clear)
 
--- draw the bottom menu
-vid:DrawSprite(vec2(5,50), menuSprites, 0, 1, color.white, color.clear)
-vid:DrawSprite(vec2(20,50), menuSprites, 1, 1, color.white, color.clear)
-vid:DrawSprite(vec2(35,50), menuSprites, 2, 1, color.white, color.clear)
-vid:DrawSprite(vec2(50,50), menuSprites, 3, 1, color.white, color.clear)
-vid:DrawSprite(vec2(65,50), menuSprites, 4, 1, color.white, color.clear)
+  -- draw the bottom menu
+  vid:DrawSprite(vec2(5,50), menuSprites, 0, 1, color.white, color.clear)
+  vid:DrawSprite(vec2(20,50), menuSprites, 1, 1, color.white, color.clear)
+  vid:DrawSprite(vec2(35,50), menuSprites, 2, 1, color.white, color.clear)
+  vid:DrawSprite(vec2(50,50), menuSprites, 3, 1, color.white, color.clear)
+  vid:DrawSprite(vec2(65,50), menuSprites, 4, 1, color.white, color.clear)
 end
-
-
--- does the menu functions
- function menuSelect()
-
--- define the if-else statement
-    if menuPos == 0 then
-      -- # info button
-      print("Menu position 0 selected")
-    elseif menuPos == 1 then
-      -- # feed button
-      print("Menu position 1 selected")
-    elseif menuPos == 2 then
-      -- # train button
-      print("Menu position 2 selected")
-    elseif menuPos == 3 then
-      -- # challange button
-      print("Menu position 3 selected")
-    elseif menuPos == 4 then
-      -- # flush button
-      print("Menu position 4 selected")
-      poopFlushQueue = 1
-    elseif menuPos == 5 then
-      -- # lights on/off button
-      print("Menu position 5 selected")
-    elseif menuPos == 6 then
-      -- # patch up / heal from sick button
-      print("Menu position 6 selected")
-    elseif menuPos == 7 then
-      -- train int digimon button
-      print("Menu position 7 selected")
-    elseif menuPos == 8 then
-      -- multiplayer fight button
-      print("Menu position 8 selected")
-    elseif menuPos == 9 then
-      -- Wip does nothing cause i dont remenber what it does
-      print("Menu position 9 selected")
-    end
- end
 
 -- draws the cursor
 function drawSelSprite()
-    vid:DrawSprite(selectorPos, menuSprites, 5, 1, color.white, color.clear)
+    vid:DrawSprite(cursorPos, menuSprites, 5, 1, color.white, color.clear)
 end
 
 function CursorHandler()
     -- everytime the button is clicked
-    menuPos += 1 -- menu position add 1
-    selposX += 15 -- move the position to 15 units
+    menu.current += 1 -- menu position add 1
+    cursor.posX += 15 -- move the position to 15 units
 
     -- if the cursor position is over the screen we go to next
-    if selposX > 60 then
-        selposY = 50
-        selposX = 0
+    if cursor.posX > 60 then
+        cursor.posY = 50
+        cursor.posX = 0
     end      
 
     -- if its over the max options we go bac
-    if menuPos > maxMenuPos then
+    if menu.current > menu.maxItems then
         -- reseting positions
-        menuPos = 0
-        selposX = 0
-        selposY = 5  
+        menu.current = 0
+        cursor.posX = 0
+        cursor.posY = 5  
     end
 end
 
@@ -210,10 +232,10 @@ function digimonMover()
     if looking < 0.5 then
         
         
-        digimonposX += 5 
+        digimon.posX += 5 
     else
         
-        digimonposX -= 5
+        digimon.posX -= 5
     end
     
     
@@ -287,24 +309,24 @@ end
 --  we do some colision checking in the rectangle
 function digimonColision()
    -- we check if we moved out of bounds and reset it to wall values
-   if digimonposX < 0 then
-        digimonposX = 2
+   if digimon.posX < 0 then
+        digimon.posX = 2
     end
-    if digimonposX > 71 then
-       digimonposX = 59
+    if digimon.posX > 71 then
+       digimon.posX = 59
     end
 end
 
 -- prints the debug info
 function debugPrint()
-print(
-"  Digimon X Y Pos:" .. digimonposX .. " " .. digimonposY .. "\n",
-"Flush X Y Pos: " .. flushPosX .. " " .. flushPosY .. "\n",
-"Current Menu:" .. menuPos .. "\n",
-"poopV:" .. poopValue .. "\n",
-"T: " .. seconds .. " " .. minutes .. " " .. hours .. "\n",
-"dlt-T: " .. deltaCounter
-)
+  print(
+  "  Digimon X Y Pos:" .. digimon.posX .. " " .. digimon.posY .. "\n",
+  "Flush X Y Pos: " .. flushPosX .. " " .. flushPosY .. "\n",
+  "MenuItem:" .. menu.current .. "\n",
+  "poopV:" .. poopValue .. "\n",
+  "T: " .. time.seconds .. " " .. time.minutes .. " " .. time.hours .. "\n",
+  "dlt-T: " .. deltaCounter
+  )
 end
 
 
@@ -316,8 +338,8 @@ function update()
   vid:Clear(color.white)
   
   -- set according possitions
-  selectorPos = vec2(selposX,selposY)
-  DigimonPos = vec2(digimonposX, digimonposY)
+  cursorPos = vec2(cursor.posX,cursor.posY)
+  DigimonPos = vec2(digimon.posX, digimon.posY)
   poopPos = vec2(PoopPosX, PoopPosY)
   
   
