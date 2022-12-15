@@ -40,14 +40,16 @@ local poopR = 0
 local poopValue = 0
 local poop = false
 local poopAnim = 0
-local poopFlushQueue = 0
-local flushing = false
 local poopPos = vec2(0, 0)
 local PoopPosX = 35
 local PoopPosY = 35
-local flushPos = vec2(0, 0)
-local flushPosX = 0
-local flushPosY = 0
+
+-- flush data 
+local flushing = false
+local flushCount = 0
+local poopFlushQueue = 0
+local flushPosX = 55
+local flushPosY = 16
 
 -- this will draw menu sprites
 function drawMenuSprites()
@@ -169,13 +171,32 @@ function drawPoop()
 end
 
 function flushPoop()
-    if poopFlushQueue > 0.5 then
 
+  -- check if we made a flush request
+  if poopFlushQueue > 0.5 then
+   
+    -- move the water left
+      flushPosX += -10
+    
 
-    vid:DrawSprite(flushPos, menuSprites, 4, 3, color.white, color.clear)
-
-
+    -- if flush moved out of screen we set all values to default
+    if flushPosX < 2 then
+    poop = false
+    poopValue = 0
+    poopFlushQueue = 0
+    flushPosX = 55
     end
+  end
+end
+
+-- draws the thing that flushes the shiz
+function drawflush()
+
+  if poopFlushQueue > 0.5 then
+  vid:DrawSprite(vec2(flushPosX, flushPosY), menuSprites, 4, 3, color.white, color.clear)
+  vid:DrawSprite(vec2(flushPosX, flushPosY + 16), menuSprites, 4, 3, color.white, color.clear)
+  end
+
 end
 
 -- this function will handdle the digimon sprites
@@ -204,10 +225,10 @@ end
 -- prints the debug info
 function debugPrint()
 print(
-"  Digimon x Pos:" .. digimonposX .. "\n",
-"Digimon y Pos:" .. digimonposY.. "\n",
+"  Digimon X Y Pos:" .. digimonposX .. " " .. digimonposY .. "\n",
 "Current Menu:" .. menuPos .. "\n",
-"poop data:" .. poopValue
+"poop data:" .. poopValue .. "\n",
+"Flush X Y Pos: " .. flushPosX .. " " .. flushPosY
 )
 end
 
@@ -223,7 +244,7 @@ function update()
     selectorPos = vec2(selposX,selposY)
     DigimonPos = vec2(digimonposX, digimonposY)
     poopPos = vec2(PoopPosX, PoopPosY)
-    flushPos = vec2(flushPosX, flushPosY)
+    
 
     -- increase the counter by the CPU's DeltaTime
     deltaCounter += gdt.CPU0.DeltaTime
@@ -246,6 +267,9 @@ function update()
     -- draw funny poopoo
     drawPoop()
 
+    -- draws the little waves to flush shit
+    drawflush()
+
     
     -- checks if the button is pressed down to cycle tru menu
     if but2.ButtonDown then
@@ -259,6 +283,7 @@ function update()
 
     if but0.ButtonDown then
         poop = true
+        poopValue += 1
     end
 
     
@@ -274,6 +299,7 @@ function update()
         frameNumber += 1
         poopAnim = math.random(2, 3)
         digimonMover()
+        flushPoop()
 							
 		end
 	  
