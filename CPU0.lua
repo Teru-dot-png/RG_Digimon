@@ -14,8 +14,8 @@ local but2 = gdt.LedButton2
 -- advance one frame
 -- this will keep track of DeltaTime
 -- keep track of the current frame
-local deltaCounter = 0
 local timeDlt = {
+ counter = 0,
  frameDuration = 1,
  frameNum = 0
 }
@@ -33,7 +33,14 @@ local time = {
 }
 
 
--- keep track of menu 
+-- flush data 
+local flushing = false
+local flushCount = 0
+local poopFlushQueue = 0
+local flushPosX = 55
+local flushPosY = 16
+
+-- keep track of menu
 local menu = { 
   current = 0,
   maxItems = 9,
@@ -95,8 +102,8 @@ local menu = {
 }
 
 -- keep track of position of selector
-local cursorPos:vec2 = vec2(0,5)
 local cursor = {
+  pos = vec2(0,5),
   posX = 0,
   posY = 5
 }
@@ -122,12 +129,6 @@ local poopPos = vec2(0, 0)
 local PoopPosX = 35
 local PoopPosY = 35
 
--- flush data 
-local flushing = false
-local flushCount = 0
-local poopFlushQueue = 0
-local flushPosX = 55
-local flushPosY = 16
 
 function timeTracker()
   -- seconds
@@ -165,8 +166,8 @@ function timeTracker()
 end
 
 function deltaTimeHandler()
-  while (deltaCounter >= timeDlt.frameDuration) do
-    deltaCounter -= timeDlt.frameDuration
+  while (timeDlt.counter >= timeDlt.frameDuration) do
+    timeDlt.counter -= timeDlt.frameDuration
     timeDlt.frameNum += 1
     timeTracker()
     poopAnim = math.random(2, 3)
@@ -199,7 +200,7 @@ end
 
 -- draws the cursor
 function drawSelSprite()
-    vid:DrawSprite(cursorPos, menuSprites, 5, 1, color.white, color.clear)
+    vid:DrawSprite(cursor.pos, menuSprites, 5, 1, color.white, color.clear)
 end
 
 function CursorHandler()
@@ -226,10 +227,10 @@ end
 function digimonMover()
     
     -- random number for looking left or right
-    looking = math.random()
+    digimon.looking = math.random()
     
     -- if its above 0.5 we move it 5 units else we go back 5 units
-    if looking < 0.5 then
+    if digimon.looking < 0.5 then
         
         
         digimon.posX += 5 
@@ -299,7 +300,7 @@ function drawDigimon()
 
 
     -- if its looking left or right we use diferent sprites 
-    if looking < 0.5 then 
+    if digimon.looking < 0.5 then 
         vid:DrawSprite(DigimonPos, digimonSpritesFlip, 0, 1, color.white, color.clear)
     else
         vid:DrawSprite(DigimonPos, digimonSprites, 0, 1, color.white, color.clear)
@@ -324,8 +325,9 @@ function debugPrint()
   "Flush X Y Pos: " .. flushPosX .. " " .. flushPosY .. "\n",
   "MenuItem:" .. menu.current .. "\n",
   "poopV:" .. poopValue .. "\n",
+  "flush:" .. poopFlushQueue .. "\n",
   "T: " .. time.seconds .. " " .. time.minutes .. " " .. time.hours .. "\n",
-  "dlt-T: " .. deltaCounter
+  "dlt-T: " .. timeDlt.counter
   )
 end
 
@@ -338,14 +340,13 @@ function update()
   vid:Clear(color.white)
   
   -- set according possitions
-  cursorPos = vec2(cursor.posX,cursor.posY)
+  cursor.pos = vec2(cursor.posX,cursor.posY)
   DigimonPos = vec2(digimon.posX, digimon.posY)
   poopPos = vec2(PoopPosX, PoopPosY)
   
   
   -- increase the counter by the CPU's DeltaTime
-  deltaCounter += gdt.CPU0.DeltaTime
-  
+  timeDlt.counter += gdt.CPU0.DeltaTime
   -- this function will draw the menu sprites
   drawMenuSprites()
   
@@ -375,7 +376,7 @@ function update()
   end
   
   if but1.ButtonDown then
-    menuSelect()
+    menu:select()
   end
   
   if but0.ButtonDown then
