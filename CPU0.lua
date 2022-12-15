@@ -169,6 +169,7 @@ function deltaTimeHandler()
   while (timeDlt.counter >= timeDlt.frameDuration) do
     timeDlt.counter -= timeDlt.frameDuration
     timeDlt.frameNum += 1
+    poopValue += 1
     timeTracker()
     poopAnim = math.random(2, 3)
     digimonMover()
@@ -251,11 +252,17 @@ end
 
 --this is like a vibe check but to see if you shat yourself
 function poopCheck()
+
+
+
     poopR = math.random( 1, 3150 )
 
-    if poopR == 500 or poopR == 200 then
+    
+  
+
+    if poopR == 500 or poopR == 200 or poopR == 1000 or poopValue >= 10800 then
     poop = true
-    poopValue += 1
+    poopValue = 0
     end
 end
 
@@ -347,6 +354,7 @@ function update()
   
   -- increase the counter by the CPU's DeltaTime
   timeDlt.counter += gdt.CPU0.DeltaTime
+
   -- this function will draw the menu sprites
   drawMenuSprites()
   
@@ -364,6 +372,9 @@ function update()
   
   -- draw funny poopoo
   drawPoop()
+
+  -- checks if you shat yourself
+  poopCheck()
   
   -- draws the little waves to flush shit
   drawflush()
@@ -380,8 +391,7 @@ function update()
   end
   
   if but0.ButtonDown then
-    poop = true
-    poopValue += 1
+    poopValue += 1000
   end
   
   
