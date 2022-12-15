@@ -331,8 +331,7 @@ function debugPrint()
   "  Digimon X Y Pos:" .. digimon.posX .. " " .. digimon.posY .. "\n",
   "Flush X Y Pos: " .. flushPosX .. " " .. flushPosY .. "\n",
   "MenuItem:" .. menu.current .. "\n",
-  "poopV:" .. poopValue .. "\n",
-  "flush:" .. poopFlushQueue .. "\n",
+  "ShitData:" .. poopValue .. poopFlushQueue .. "\n",
   "T: " .. time.seconds .. " " .. time.minutes .. " " .. time.hours .. "\n",
   "dlt-T: " .. timeDlt.counter
   )
