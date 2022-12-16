@@ -127,6 +127,7 @@ local digimon = {
    pos = vec2(0,0),
    posX = 35,
    posY = 25,
+   r = 0,
    sleepTime0 = 0,
    looking = 0,
    sleeping = false
@@ -184,11 +185,9 @@ function deltaTimeHandler()
     timeDlt.frameNum += 1
     poop.value += 1
     timeTracker()
+    digimon.r = math.random(0, 1) 
     poop.anim = math.random(2, 3)
-    room.r = math.random(0, 1)
-
-    
-
+    room.r = math.random(0, 1) 
     digimonMover()
     flushPoop()
   end
@@ -362,9 +361,9 @@ function drawDigimon()
   if digimon.sleeping == false then
     -- if its looking left or right we use diferent sprites 
     if digimon.looking < 0.5 then 
-        vid:DrawSprite(digimon.pos, digimonSpritesFlip, 0, 1, color.white, color.clear)
+        vid:DrawSprite(digimon.pos, digimonSpritesFlip, 0, 0 + digimon.r, color.white, color.clear)
     else
-        vid:DrawSprite(digimon.pos, digimonSprites, 0, 1, color.white, color.clear)
+        vid:DrawSprite(digimon.pos, digimonSprites, 0, 0 + digimon.r, color.white, color.clear)
     end
   else
     if digimon.looking < 0.5 then 
