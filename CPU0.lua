@@ -368,9 +368,9 @@ function drawDigimon()
     end
   else
     if digimon.looking < 0.5 then 
-    vid:DrawSprite(digimon.pos, digimonSprites, 1, 3, color.white, color.clear)
+    vid:DrawSprite(digimon.pos, digimonSprites, 0, 3, color.white, color.clear)
     else
-    vid:DrawSprite(digimon.pos, digimonSpritesFlip, 1, 3, color.white, color.clear)
+    vid:DrawSprite(digimon.pos, digimonSpritesFlip, 0, 3, color.white, color.clear)
     end
   end
 end
