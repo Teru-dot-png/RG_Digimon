@@ -1,31 +1,30 @@
--- Assets
-local menuSprites:SpriteSheet = gdt.ROM.User.SpriteSheets.Digimon1
-local digimonSprites:SpriteSheet = gdt.ROM.User.SpriteSheets.digimonNIGHTMARE1
-local digimonSpritesFlip:SpriteSheet = gdt.ROM.User.SpriteSheets.digimonNIGHTMARE1Flip
+-- Assets 
+local menuSprites:SpriteSheet = gdt.ROM.User.SpriteSheets.Digimon1 -- menu Sprites for main game
+local digimonSprites:SpriteSheet = gdt.ROM.User.SpriteSheets.digimonNIGHTMARE1 -- digimon Sprites looking left
+local digimonSpritesFlip:SpriteSheet = gdt.ROM.User.SpriteSheets.digimonNIGHTMARE1Flip -- digimon Sprites looking right
 
 -- Hardware
-local vid:VideoChip = gdt.VideoChip0
-local web:Wifi = gdt.Wifi0
-local but0 = gdt.LedButton0
-local but1 = gdt.LedButton1
-local but2 = gdt.LedButton2
+local vid:VideoChip = gdt.VideoChip0 -- graphics chip
+local web:Wifi = gdt.Wifi0 -- wifi web conectivity
+local but0 = gdt.LedButton0 -- bottom button
+local but1 = gdt.LedButton1 -- mid button
+local but2 = gdt.LedButton2 -- top button
 
 -- keep track of room info
 local room = {
-lights = true,
-r = 0
+lights = true, -- room lights if on then true if off then false
+r = 0 -- random number  between (1, 0)
 }
 
--- advance one frame
--- this will keep track of DeltaTime
--- keep track of the current frame
+
+-- keep track of time deltas and frames
 local timeDlt = {
- counter = 0,
- frameDuration = 1,
- frameNum = 0
+ counter = 0, -- this will keep track of DeltaTime
+ frameDuration = 1, -- how long in seconds it runs
+ frameNum = 0 -- keep track of the current frame
 }
 
--- Time data
+-- Time data i cant give info on this its pretty self explanatory
 local time = {
    seconds = 0,
    minutes = 0,
@@ -35,33 +34,46 @@ local time = {
    months = 0,
    years = 0
   
-}
-
-
+  }
+  
+  -- keep track of digimon position and stats
+  local digimon = {
+     pos = vec2(0,0), -- possition of Digimon
+     posX = 35,  -- X possition of Digimon
+     posY = 25,  -- Y possition of Digimon
+     r = 0, -- Random value
+     sleepTime0 = 0, -- Sleep timer
+     looking = 0, -- facing (0 = left, 1 = right)
+     sleeping = false
+  }
+  
 -- flush data 
 flush = {
-ing = false,
-queue = 0,
-posX = 55,
-posY = 16
+ing = false, -- check if currently "flush-ing"
+queue = 0, -- asks a queue if it can flush
+posX = 55, -- possition of water
+posY = 16 -- possition of water
 }
 
 -- keep track of menu
 local menu = { 
-  current = 0,
-  maxItems = 9,
-  isInsideMenu = false,
-  isUnselected = false,
+  current = 0, -- current menu from (0, 9)
+  maxItems = 9, -- max number of items
+  isInsideMenu = false, -- check if its inside sub menu
+  isUnselected = false,-- check if its unselected
 
-  nextButton = function(self)
-    if self.current < self.maxItems then
-      self.current += 1
-    elseif self.current > self.maxItems then
-    self.current = 0
-    end
-  end,
 
   -- Define an array of menu items and their associated actions.
+  -- (0:info)
+  -- (1:feed)
+  -- (2:train)
+  -- (3:challange) 
+  -- (4:flush)
+  -- (5:lights)
+  -- (6:patch)
+  -- (7:inteligence training)
+  -- (8:online)
+  -- (9:wip)
   items = {
     {name = "info", action = function() 
       print("Menu position 0 selected") 
@@ -77,13 +89,19 @@ local menu = {
     end},
     {name = "flush", action = function() 
       print("Menu position 4 selected") 
+      -- if sleeping = true we cant flush
+      if digimon.sleeping == false then
+
+        -- if room lights are of theres also no reason to flush
       if room.lights == true then
       flush.queue = 1 
       flush.ing = 1
       end
+    end
     end},
     {name = "lights", action = function() 
       print("Menu position 5 selected")
+      -- turn on and off room lights
       if room.lights == false then
       room.lights = true 
       elseif room.lights == true then
@@ -96,7 +114,7 @@ local menu = {
     {name = "int train", action = function() 
       print("Menu position 7 selected") 
     end},
-    {name = "0nline", action = function() 
+    {name = "Online", action = function() 
       print("Menu position 8 selected") 
     end},
     {name = "wip", action = function() 
@@ -117,21 +135,11 @@ local menu = {
 
 -- keep track of position of selector
 local cursor = {
-  pos = vec2(0,5),
-  posX = 0,
-  posY = 5
+  pos = vec2(0,5), -- possition of the cursor
+  posX = 0, -- X possition of the cursor
+  posY = 5 -- Y possition of the cursor
 }
 
--- keep track of digimon position and stats
-local digimon = {
-   pos = vec2(0,0),
-   posX = 35,
-   posY = 25,
-   r = 0,
-   sleepTime0 = 0,
-   looking = 0,
-   sleeping = false
-}
 
 -- as much as i dont want to we need to keep track of poop
  poop = {
@@ -179,11 +187,15 @@ function timeTracker()
   end
 end
 
+
+-- gets executed every second for the duration of a second
 function deltaTimeHandler()
   while (timeDlt.counter >= timeDlt.frameDuration) do
     timeDlt.counter -= timeDlt.frameDuration
     timeDlt.frameNum += 1
+    -- add 1 to the poop value
     poop.value += 1
+    -- keeps track of time
     timeTracker()
     digimon.r = math.random(0, 1) 
     poop.anim = math.random(2, 3)
@@ -196,18 +208,36 @@ end
 -- this will draw menu sprites
 function drawMenuSprites()
 
-  if flush.ing == false then
-   if room.lights == false then
-     vid:FillRect(vec2(5, 15), vec2(72, 48), color.black)
 
-    if digimon.sleeping == true then
-     vid:DrawSprite(vec2(digimon.posX + room.r ,digimon.posY + room.r), menuSprites, 7, room.r, color.white, color.white)
+  -- checks if 
   
-    elseif digimon.sleeping == false then
-    vid:DrawSprite(vec2(digimon.posX + room.r ,digimon.posY + room.r), menuSprites, 7, 2, color.white, color.white)
-    end
-   end
+
+ -- Check if the room lights are off
+if room.lights == false then
+  -- If the room lights are off, fill the screen with black 
+  vid:FillRect(vec2(5, 15), vec2(72, 48), color.black)
+  -- Check if the digimon is sleeping
+  if digimon.sleeping == true then
+      -- If the digimon is sleeping, make zz appear when light off (draw zz sleeping particles in dark)
+      vid:DrawSprite(vec2(digimon.posX + 15 ,digimon.posY + room.r), menuSprites, 7, room.r, color.white, color.white)
+  else
+      -- If the digimon is not sleeping, and lights are of it will get angry (draw "#" angry symbol)
+      vid:DrawSprite(vec2(digimon.posX + 15 ,digimon.posY + room.r), menuSprites, 7, 2, color.white, color.white)
   end
+
+-- If the room lights are on
+else
+  -- Check if the digimon is sleeping
+  if digimon.sleeping == true then
+      -- If the digimon is sleeping, draw (draw zz sleeping particles on a lit room)
+      vid:DrawSprite(vec2(digimon.posX + 15 ,digimon.posY + room.r), menuSprites, 6, room.r, color.white, color.clear ) 
+  end
+end
+
+
+
+  
+
 
   -- makes the menu borders
   vid:DrawRect(vec2(5, 15), vec2(72, 48), color.black)
@@ -215,7 +245,7 @@ function drawMenuSprites()
   vid:FillRect(vec2(73, 15), vec2(79, 48), color.white)
 
 
-
+    
   -- Draws the top menu
   vid:DrawSprite(vec2(5,5), menuSprites, 0, 0, color.white, color.clear)
   vid:DrawSprite(vec2(20,5), menuSprites, 1, 0, color.white, color.clear)
@@ -296,8 +326,8 @@ function digimonHandler()
     if digimon.sleepTime0 >= 28800 then
       digimon.sleepTime0 -= 28800
       digimon.sleeping = true
-    end
-  end
+    end -- #endof if digimon been awake for 8 hours
+  end -- #endof 
 end
 
 
@@ -306,15 +336,16 @@ end
 function poopCheck()
 
 
-
-    poop.r = math.random( 1, 13150 )
+    if digimon.sleeping == false then
+    poop.r = math.random( 0, 10000 )
 
   
-    if poop.r == 500 or poop.value >= 10800 then
+    if poop.r == 1 or poop.value >= 10800 then
     poop.hasHappend = true
     poop.value = 0
-    end
-end
+    end -- #endof if
+  end -- #endof sleep Check
+end -- #endof poopCheck()
 
 -- this function will draw poop if digimon has done the peepee poopoo caacaa
 function drawPoop()
@@ -324,7 +355,6 @@ function drawPoop()
 end
 
 function flushPoop()
-
   -- check if we made a flush request
   if flush.queue > 0.5 then
    
@@ -341,8 +371,11 @@ function flushPoop()
       poop.hasHappend = false
       poop.value = 0
       end
+      -- endof poophashappend
     end
-  end
+    --endof posX check
+   end
+   -- endof flushqueue
 end
 
 -- draws the thing that flushes the shiz
