@@ -111,7 +111,7 @@ local menu = {
     {name = "patch", action = function() 
       print("Menu position 6 selected") 
     end},
-    {name = "int train", action = function() 
+    {name = "Evo/info Album", action = function() 
       print("Menu position 7 selected") 
     end},
     {name = "Online", action = function() 
@@ -209,7 +209,7 @@ end
 function drawMenuSprites()
 
 
-  -- checks if 
+
   
 
  -- Check if the room lights are off
@@ -423,8 +423,8 @@ function debugPrint()
     
   print(
     "  MenuItem: " .. menu.current .. "\n",
-    "room " .. "l" .. tostring(room.lights) .. " " .. "F" .. tostring(flush.ing) .. "\n",
-    "DigimonInfo " .. digimon.sleepTime0 .. " " .. tostring(digimon.sleeping) .. "\n",
+    "room: " .. " L" .. tostring(room.lights) .. " " .. "F" .. tostring(flush.ing) .. "\n",
+    "DigimonInfo " .. math.floor(digimon.sleepTime0)  .. " " .. tostring(digimon.sleeping) .. "\n",
   
   --"Flush X Y Pos: " .. flush.posX .. " " .. flush.posY .. "\n",
   --"ShitData:" .. poop.value .. " " .. flush.queue .. "\n",
