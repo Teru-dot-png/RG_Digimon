@@ -1,71 +1,117 @@
-local json = require("JSON")
+--! Dependencies
+local JSON = require("json.lua")
 
--- Assets 
+
+--! EventCH
+gdt.CPU0.EventChannels[1] = gdt.Wifi0
+local handleFuncs: {[number]: (result: WifiWebResponseEvent) -> ()} = {}
+
+
+--! Assets 
 local menuSprites:SpriteSheet = gdt.ROM.User.SpriteSheets.Digimon1 -- menu Sprites for main game
 local digimonSprites:SpriteSheet = gdt.ROM.User.SpriteSheets.digimonNIGHTMARE1 -- digimon Sprites looking left
 local digimonSpritesFlip:SpriteSheet = gdt.ROM.User.SpriteSheets.digimonNIGHTMARE1Flip -- digimon Sprites looking right
 
--- Hardware
+--! Hardware
 local vid:VideoChip = gdt.VideoChip0 -- graphics chip
 local web:Wifi = gdt.Wifi0 -- wifi web conectivity
 local but0 = gdt.LedButton0 -- bottom button
 local but1 = gdt.LedButton1 -- mid button
 local but2 = gdt.LedButton2 -- top button
 
--- keep track of room info
+--!----------------------------------------------------------------------------
+--!----EventCH 1         ------------------------------------------------------
+--!----------------------------------------------------------------------------
+
+
+
+function eventChannel1(_: Wifi, event: WifiWebResponseEvent)
+  handleFuncs[event.RequestHandle](event)
+  handleFuncs[event.RequestHandle] = nil
+end
+
+
+
+
+
+
+
+
+--function eventChannel1(sender, arg)
+--  if arg.IsError then
+--    -- There was an error with the request
+--    print("Error:", arg.ErrorType, arg.ErrorMessage)
+--  else
+--    -- The request was successful
+--    local time_data = JSON.decode(arg.Text)
+--    local current_time = time_data.timestamp
+--    if arg.RequestHandle == start_time_req then
+--      start_time = current_time
+--    elseif arg.RequestHandle == current_time_req then
+--      elapsed_time = current_time - start_time
+--    end
+--  end
+--end
+
+--!----------------------------------------------------------------------------
+
+--? apikey
+local apikey = "604BVN2A19K8"
+
+--? keep track of room info
 local room = {
 lights = true, -- room lights if on then true if off then false
 r = 0 -- random number  between (1, 0)
 }
 
 
--- keep track of time deltas and frames
+--? keep track of time deltas and frames
 local timeDlt = {
- counter = 0, -- this will keep track of DeltaTime
+  counter = 0, -- this will keep track of DeltaTime
  frameDuration = 1, -- how long in seconds it runs
  frameNum = 0 -- keep track of the current frame
 }
 
--- Time data i cant give info on this its pretty self explanatory
+--? Time data i cant give info on this its pretty self explanatory
 local time = {
-   seconds = 0,
-   minutes = 0,
-   hours = 0,
-   days = 0,
-   weeks = 0,
-   months = 0,
-   years = 0
-  
-  }
-  
-  -- keep track of digimon position and stats
+  seconds = 0,
+  minutes = 0,
+  hours = 0,
+  days = 0,
+  weeks = 0,
+  months = 0,
+  years = 0,
+  condition = false
+}
+
+  --? keep track of digimon position and stats
   local digimon = {
-     pos = vec2(0,0), -- possition of Digimon
-     posX = 35,  -- X possition of Digimon
-     posY = 25,  -- Y possition of Digimon
-     r = 0, -- Random value
-     sleepTime0 = 0, -- Sleep timer
-     looking = 0, -- facing (0 = left, 1 = right)
-     sleeping = false
+    pos = vec2(0,0), -- possition of Digimon
+    posX = 35,  -- X possition of Digimon
+    posY = 25,  -- Y possition of Digimon
+    r = 0, -- Random value
+    sleepTime0 = 0, -- Sleep timer
+    looking = 0, -- facing (0 = left, 1 = right)
+    sleeping = false
   }
   
--- flush data 
-flush = {
+  --? flush data 
+  flush = {
 ing = false, -- check if currently "flush-ing"
 queue = 0, -- asks a queue if it can flush
 posX = 55, -- possition of water
 posY = 16 -- possition of water
 }
 
--- keep track of menu
+--? keep track of menu
 local menu = { 
   current = 0, -- current menu from (0, 9)
   maxItems = 9, -- max number of items
   isInsideMenu = false, -- check if its inside sub menu
   isUnselected = false,-- check if its unselected
-
-
-  -- Define an array of menu items and their associated actions.
+  
+  
+  --? Define an array of menu items and their associated actions.
   -- (0:info)
   -- (1:feed)
   -- (2:train)
@@ -93,21 +139,21 @@ local menu = {
       print("Menu position 4 selected") 
       -- if sleeping = true we cant flush
       if digimon.sleeping == false then
-
+        
         -- if room lights are of theres also no reason to flush
-      if room.lights == true then
-      flush.queue = 1 
-      flush.ing = 1
+        if room.lights == true then
+          flush.queue = 1 
+          flush.ing = 1
+        end
       end
-    end
     end},
     {name = "lights", action = function() 
       print("Menu position 5 selected")
       -- turn on and off room lights
       if room.lights == false then
-      room.lights = true 
+        room.lights = true 
       elseif room.lights == true then
-      room.lights = false
+        room.lights = false
       end
     end},
     {name = "patch", action = function() 
@@ -123,7 +169,7 @@ local menu = {
       print("Menu position 9 selected") 
     end},
   },
-
+  
   -- This is a method of the `menu` object. It iterates over the `items` array and
   -- executes the appropriate action based on the value of the `current` property.
   select = function(self)
@@ -135,7 +181,7 @@ local menu = {
   end
 }
 
--- keep track of position of selector
+--? keep track of position of selector
 local cursor = {
   pos = vec2(0,5), -- possition of the cursor
   posX = 0, -- X possition of the cursor
@@ -143,15 +189,17 @@ local cursor = {
 }
 
 
--- as much as i dont want to we need to keep track of poop
- poop = {
- r = 0,
- value = 0,
- hasHappend = false,
- anim = 0,
- pos = vec2(0, 0),
- posX = 35,
- posY = 35
+
+
+--? as much as i dont want to we need to keep track of poop
+poop = {
+  r = 0,
+  value = 0,
+  hasHappend = false,
+  anim = 0,
+  pos = vec2(0, 0),
+  posX = 35,
+  posY = 35
 }
 
 function timeTracker()
@@ -190,53 +238,28 @@ function timeTracker()
 end
 
 
--- gets executed every second for the duration of a second
+--* gets executed every second for the duration of a second
 function deltaTimeHandler()
   while (timeDlt.counter >= timeDlt.frameDuration) do
     timeDlt.counter -= timeDlt.frameDuration
     timeDlt.frameNum += 1
-    -- add 1 to the poop value
-    poop.value += 1
-    -- keeps track of time
-    timeTracker()
-    digimon.r = math.random(0, 1) 
-    poop.anim = math.random(2, 3)
-    room.r = math.random(0, 1) 
-    digimonMover()
-    flushPoop()
+   
   end
 end
 
-
-function timer(interval, func, stop_condition, api_key)
-  local start_time_url = "https://api.timezonedb.com/v2.1/get-time-zone?key=%s&format=json&by=zone&zone=UTC"
-  local start_time = web:WebGet(string.format(start_time_url, api_key))
-  start_time = json.decode(start_time).timestamp
-  local elapsed_time = 0
-  while true do
-    if stop_condition() then
-      break
-    end
-    local current_time_url = "https://api.timezonedb.com/v2.1/get-time-zone?key=%s&format=json&by=zone&zone=UTC"
-    local current_time = web:WebGet(string.format(current_time_url, api_key))
-    current_time = json.decode(current_time).timestamp
-    elapsed_time = current_time - start_time
-    if elapsed_time >= interval then
-      start_time = current_time
-      func()
-    end
-  end
+local function fetch(wifi: Wifi, url: string, resultFunc: (response: WifiWebResponseEvent) -> ())
+  local handle = wifi:WebGet(url)
+  handleFuncs[handle] = resultFunc
 end
 
 
 
 
--- this will draw menu sprites
+
+
+
+--* this will draw menu sprites
 function drawMenuSprites()
-
-
-
-  
 
  -- Check if the room lights are off
 if room.lights == false then
@@ -312,7 +335,7 @@ function CursorHandler()
     end
 end
 
--- this function will move the digimon once and a while
+--* this function will move the digimon once and a while
 function digimonMover()
     
   if digimon.sleeping == false then
@@ -332,7 +355,7 @@ function digimonMover()
     
 end
 
--- this function will handdle the digimon stats and needs
+--* this function will handdle the digimon stats and needs
 function digimonHandler()
   -- digimon time counter
   digimon.sleepTime0 += gdt.CPU0.DeltaTime
@@ -358,7 +381,7 @@ end
 
 
 
---this is like a vibe check but to see if you shat yourself
+--* this is like a vibe check but to see if you shat yourself
 function poopCheck()
 
 
@@ -373,7 +396,7 @@ function poopCheck()
   end -- #endof sleep Check
 end -- #endof poopCheck()
 
--- this function will draw poop if digimon has done the peepee poopoo caacaa
+--* this function will draw poop if digimon has done the peepee poopoo caacaa
 function drawPoop()
     if poop.hasHappend == true then
     vid:DrawSprite(poop.pos, menuSprites, 6, poop.anim, color.white, color.clear)
@@ -381,7 +404,7 @@ function drawPoop()
 end
 
 function flushPoop()
-  -- check if we made a flush request
+  --* check if we made a flush request
   if flush.queue > 0.5 then
    
     -- move the water left
@@ -404,7 +427,7 @@ function flushPoop()
    -- endof flushqueue
 end
 
--- draws the thing that flushes the shiz
+--* draws the thing that flushes the shiz
 function drawflush()
 
   if flush.queue > 0.5 then
@@ -414,7 +437,7 @@ function drawflush()
 
 end
 
--- this function will handdle the digimon sprites
+--* this function will handdle the digimon sprites
 function drawDigimon()
 
   if digimon.sleeping == false then
@@ -444,7 +467,7 @@ function digimonColision()
     end
 end
 
--- prints the debug info
+--* prints the debug info
 function debugPrint()
     
   print(
@@ -460,13 +483,73 @@ function debugPrint()
   )
 end
 
+local function createTimer(cpu: CPU, interval: number, func: (totalTime: number) -> ())
+  local startTime = cpu.Time
+  local lastInterval = startTime
+
+  return {
+      update = function()
+          if(cpu.Time - lastInterval) >= interval then 
+              lastInterval = cpu.Time
+              func(cpu.Time - startTime)
+          end
+      end,
+      getTotalTime = function()
+          return cpu.Time - startTime
+      end,
+  }
+end
 
 
--- ################################
--- ######## MAIN GAME LOOP ########
--- ################################
+
+local start_time_received = false
+
+
+local function startTime(api_key)
+  if not start_time_received then
+    start_time_received = true
+
+    local start_time_url = "https://api.timezonedb.com/v2.1/get-time-zone?key=%s&format=json&by=zone&zone=UTC"
+    local start_time_url = string.format(start_time_url, api_key)
+
+    fetch(start_time_url, function(response)
+      if response.status == 200 then
+        local time_data = json.decode(response.text)
+        time.seconds = time_data.timestamp
+      else
+        -- There was an error with the request
+        print("Error:", response.status, response.text)
+      end
+    end)
+  end
+end
+
+
+
+local timer = createTimer(
+    gdt.CPU0,
+    1,
+    function(totalTime) 
+        startTime(apikey)
+        -- add 1 to the poop value
+        poop.value += 1
+        -- keeps track of time
+        timeTracker()
+        digimon.r = math.random(0, 1) 
+        poop.anim = math.random(2, 3)
+        room.r = math.random(0, 1) 
+        digimonMover()
+        flushPoop()
+        print("I was triggered, time elapsed "..totalTime.." seconds")
+        debugPrint()
+    end
+)
+
+--! ################################
+--! ######## MAIN GAME LOOP ########
+--! ################################
 function update()
-  debugPrint()
+  timer.update()
   
 
 
@@ -531,9 +614,11 @@ function update()
     digimon.sleepTime0 += 28799
   end
   
+
   
   
-  
-  -- time tracker 
+   
+  -- Time tracker 
+  local elapsed = timer.getTotalTime()
   deltaTimeHandler()
 end
