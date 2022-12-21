@@ -445,6 +445,17 @@ local function createTimer(cpu: CPU, interval: number, func: (totalTime: number)
   }
 end
 
+function spreadTimestamp(timestamp, time)
+  -- Calculate the number of seconds, minutes, hours, days, weeks, months, and years
+  -- from the timestamp
+  time.seconds = timestamp % 60
+  time.minutes = math.floor(timestamp / 60) % 60
+  time.hours = math.floor(timestamp / 3600) % 24
+  time.days = math.floor(timestamp / 86400) % 7
+  time.weeks = math.floor(timestamp / 604800) % 4
+  time.months = math.floor(timestamp / 2629743) % 12
+  time.years = math.floor(timestamp / 31556926)
+end
 
 
 
@@ -459,7 +470,7 @@ local function startTime(api_key)
     fetch(web ,start_time_url, function(response)
       if response.Status == 200 then
         local time_data = json.decode(response.Text)
-        time.seconds = time_data.timestamp
+        spreadTimestamp(time_data.timestamp)
       else
         -- There was an error with the request
         print("Error:", response.Status, response.Text)
