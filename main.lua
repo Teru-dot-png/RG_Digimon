@@ -457,12 +457,12 @@ local function startTime(api_key)
     local start_time_url = string.format(start_time_url, api_key)
 
     fetch(web ,start_time_url, function(response)
-      if response.status == 200 then
-        local time_data = json.decode(response.text)
+      if response.Status == 200 then
+        local time_data = json.decode(response.Text)
         time.seconds = time_data.timestamp
       else
         -- There was an error with the request
-        print("Error:", response.status, response.text)
+        print("Error:", response.Status, response.Text)
       end
     end)
   end
