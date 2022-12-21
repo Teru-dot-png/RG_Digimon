@@ -202,40 +202,7 @@ poop = {
   posY = 35
 }
 
-function timeTracker()
-  -- seconds
-  time.seconds += 1
-  if time.seconds == 60 then
-    time.seconds = 0
-    -- minutes
-    time.minutes += 1
-    if time.minutes == 60 then
-      time.minutes = 0
-      -- hours
-      time.hours += 1
-      if time.hours == 24 then
-        time.hours = 0
-        -- days
-        time.days += 1
-        if time.days == 7 then
-          time.days = 0
-          -- weeks
-          time.weeks += 1
-          if time.weeks == 4 then
-            time.weeks = 0
-            -- month
-            time.months += 1
-            if time.months == 12 then
-              months = 0
-              -- years
-              time.years += 1
-            end
-          end
-        end
-      end
-    end
-  end
-end
+
 
 
 --* gets executed every second for the duration of a second
@@ -502,12 +469,11 @@ end
 
 
 
-local start_time_received = false
 
 
 local function startTime(api_key)
-  if not start_time_received then
-    start_time_received = true
+  if not time.condition then
+    time.condition = true
 
     local start_time_url = "https://api.timezonedb.com/v2.1/get-time-zone?key=%s&format=json&by=zone&zone=UTC"
     local start_time_url = string.format(start_time_url, api_key)
@@ -534,7 +500,7 @@ local timer = createTimer(
         -- add 1 to the poop value
         poop.value += 1
         -- keeps track of time
-        timeTracker()
+        -- timeTracker()
         digimon.r = math.random(0, 1) 
         poop.anim = math.random(2, 3)
         room.r = math.random(0, 1) 
