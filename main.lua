@@ -512,7 +512,7 @@ local function startTime(api_key)
     local start_time_url = "https://api.timezonedb.com/v2.1/get-time-zone?key=%s&format=json&by=zone&zone=UTC"
     local start_time_url = string.format(start_time_url, api_key)
 
-    fetch(start_time_url, function(response)
+    fetch(web ,start_time_url, function(response)
       if response.status == 200 then
         local time_data = json.decode(response.text)
         time.seconds = time_data.timestamp
