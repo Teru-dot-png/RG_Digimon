@@ -31,28 +31,6 @@ function eventChannel1(_: Wifi, event: WifiWebResponseEvent)
 end
 
 
-
-
-
-
-
-
---function eventChannel1(sender, arg)
---  if arg.IsError then
---    -- There was an error with the request
---    print("Error:", arg.ErrorType, arg.ErrorMessage)
---  else
---    -- The request was successful
---    local time_data = JSON.decode(arg.Text)
---    local current_time = time_data.timestamp
---    if arg.RequestHandle == start_time_req then
---      start_time = current_time
---    elseif arg.RequestHandle == current_time_req then
---      elapsed_time = current_time - start_time
---    end
---  end
---end
-
 --!----------------------------------------------------------------------------
 
 --? apikey
