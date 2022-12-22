@@ -9,6 +9,7 @@ local menuSprites:SpriteSheet = gdt.ROM.User.SpriteSheets.Digimon1 -- menu Sprit
 local digimonSprites:SpriteSheet = gdt.ROM.User.SpriteSheets.digimonNIGHTMARE1 -- digimon Sprites looking left
 local digimonSpritesFlip:SpriteSheet = gdt.ROM.User.SpriteSheets.digimonNIGHTMARE1Flip -- digimon Sprites looking right
 
+
 --! Hardware
 local vid:VideoChip = gdt.VideoChip0 -- graphics chip
 local web:Wifi = gdt.Wifi0 -- wifi web conectivity
@@ -30,8 +31,9 @@ end
 
 --!----------------------------------------------------------------------------
 
---? apikey
-local apikey = "604BVN2A19K8"
+
+--? Flag to enable debugging messages
+local debugB = true
 
 --? keep track of room info
 local room = {
@@ -380,6 +382,8 @@ function drawflush()
 
 end
 
+
+
 --* this function will handdle the digimon sprites
 function drawDigimon()
 
@@ -481,58 +485,107 @@ end
 
 
 local function startTime()
-  
+  debugPrint("info", "TIME IS UPDATING...")
   -- Retrieve the current Unix timestamp from the custom API
   -- Get IP  to trow at custom api 
   fetch(web, "https://api64.ipify.org/", function(response)
-    
-    
     -- print ip response to see if we got the right thing
-    print(response.Text)
     local ip = response.Text
-    
-    
+    debugPrint("info", "GOT IP", ip )
     if tonumber(ip:sub(1, 1)) then
       time.condition = true
       
-          fetch(web, "http://srchforamie.com:5000/time/" .. ip, function(response)
-            local time_string = response.Text
-            print(time_string)
-            if tonumber(time_string:sub(1, #time_string - 2)) then
-          
-              spreadTimestamp(time_string:sub(1, #time_string - 2))
-            else
-              time.condition = false
-              -- There was an error with the request
-              print("Error:", response.Status, response.Text)
-            end
-  
-          end)
-
+      fetch(web, "http://srchforamie.com:5000/time/" .. ip, function(response)
+        local time_string = response.Text
+        debugPrint("info","GOT UNIX" ,time_string)
+        if tonumber(time_string:sub(1, #time_string - 2)) then
+          debugPrint("info", "TIME HAS BEEN UPDATED")
+          spreadTimestamp(time_string:sub(1, #time_string - 2))
+        else
+          time.condition = false
+          -- There was an error with the request
+          debugPrint("error", "WEB", response.Status, response.Text)
         end
         
-    end)
+      end)
+    else
+      debugPrint("error", "GOT", response.Text)
+
+    end
+  end)
   
 end
 
+--*###
+--*### prints the debug info
+--*###
+function debugPrint(level, ...)
+  local levels = {
+    ["error"] = 1,
+    ["warning"] = 2,
+    ["info"] = 3,
+    ["debug"] = 4,
+    ["time"] = 5,
+  }
 
-function runOnce()
-  if time.counter == 0 then
-    -- do something here
-    startTime()
-  end
-  time.counter = time.counter + 1
-  if time.counter == 500 then
-    time.counter = 0
+  -- Only show debugging messages if the `debug` flag is set to `true`
+  if debugB then
+    -- Add timestamps to the output
+    local timestamp = string.format("[%02d:%02d:%02d]", time.hours, time.minutes, time.seconds)
+
+    if level == "error" then
+      setFgColor(91) -- red
+      print(timestamp, "ERROR:", ...)
+      setFgColor(39) -- default color
+    elseif level == "warning" then
+      setFgColor(93) -- yellow
+      print(timestamp, "WARNING:", ...)
+      setFgColor(39) -- default color
+    elseif level == "info" then
+      setFgColor(92) -- green
+      print(timestamp, "INFO:", ...)
+      setFgColor(39) -- default color
+    elseif level == "debug" then
+      setFgColor(94) -- blue
+      print(timestamp, "DEBUG:", ...)
+      setFgColor(39) -- default color
+    elseif level == "time" then
+      setFgColor(95) -- magenta
+      print(timestamp)
+      setFgColor(39) -- default color
+    else
+      setFgColor(91) -- red
+      print(timestamp, "UNKNOWN:", ...)
+      setFgColor(39) -- default color
+    end
   end
 end
 
+local webtimeC = 0
+
+function runEvery(func, counting, ends)
+  if counting == 0 then
+    -- do something here
+    func()
+  end
+  counting = counting + 1
+  if counting == ends then
+    counting = 0
+  end
+  return counting
+end
 
 local timer = createTimer(
     gdt.CPU0,
     1,
-    function(totalTime) 
-        runOnce()
+    function() 
+      debugPrint("debug", "Pet", "X" .. digimon.posX, "Y" .. digimon.posY  )
+        webtimeC = runEvery(function()
+          startTime()
+        end,
+          webtimeC,
+          500
+        )
         incrementTime(time.seconds)
         -- add 1 to the poop value
         poop.value += 1
@@ -543,28 +596,11 @@ local timer = createTimer(
         room.r = math.random(0, 1) 
         digimonMover()
         flushPoop()
-        debugPrint()
+        
     end
 )
 
 
---*###
---*### prints the debug info
---*###
-function debugPrint()
-    
-  print(
-    "  MenuItem: " .. menu.current .. "\n",
-    "room: " .. " L" .. tostring(room.lights) .. " " .. "F" .. tostring(flush.ing) .. "\n",
-    "DigimonInfo " .. math.floor(digimon.sleepTime0)  .. " " .. tostring(digimon.sleeping) .. "\n",
-  
-  --"Flush X Y Pos: " .. flush.posX .. " " .. flush.posY .. "\n",
-  --"ShitData:" .. poop.value .. " " .. flush.queue .. "\n",
-  --"dlt-T: " .. timeDlt.counter .. "\n",
-  --"CPU-D: " .. gdt.CPU0.DeltaTime .. "\n",
-  "S" .. time.seconds .. " M" .. time.minutes .. " H" .. time.hours
-  )
-end
 
 
 
@@ -573,6 +609,12 @@ end
 --! ######## MAIN GAME LOOP ########
 --! ################################
 function update()
+  --? check if time has been updated from web
+  if time.condition == false then
+    debugPrint("warning", "TimeNotStarted YOU ARE OFFLINE")
+    -- Output: "[HH:MM:SS] WARNING: timeNotStarted"
+  end
+  --! important updater 
   timer.update()
   
 
@@ -635,7 +677,12 @@ function update()
     -- debug shityourself button
     -- poop.value += 4
     -- digimon.posX += 4
-    digimon.sleepTime0 += 28799
+    -- digimon.sleepTime0 += 28799
+    if debugB == false then
+      debugB = true 
+    elseif debugB == true then
+      debugB = false
+    end
   end
   
 
