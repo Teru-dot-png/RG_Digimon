@@ -17,7 +17,7 @@ local but1 = gdt.LedButton1 -- mid button
 local but2 = gdt.LedButton2 -- top button
 
 --!----------------------------------------------------------------------------
---!----EventCH 1         ------------------------------------------------------
+--!----   EventCH 1      ------------------------------------------------------
 --!----------------------------------------------------------------------------
 
 
@@ -56,7 +56,8 @@ local time = {
   weeks = 0,
   months = 0,
   years = 0,
-  condition = false
+  condition = false,
+  counter = 0
 }
 
   --? keep track of digimon position and stats
@@ -409,21 +410,44 @@ function digimonColision()
     end
 end
 
---* prints the debug info
-function debugPrint()
-    
-  print(
-    "  MenuItem: " .. menu.current .. "\n",
-    "room: " .. " L" .. tostring(room.lights) .. " " .. "F" .. tostring(flush.ing) .. "\n",
-    "DigimonInfo " .. math.floor(digimon.sleepTime0)  .. " " .. tostring(digimon.sleeping) .. "\n",
-  
-  --"Flush X Y Pos: " .. flush.posX .. " " .. flush.posY .. "\n",
-  --"ShitData:" .. poop.value .. " " .. flush.queue .. "\n",
-  --"dlt-T: " .. timeDlt.counter .. "\n",
-  --"CPU-D: " .. gdt.CPU0.DeltaTime .. "\n",
-  "S" .. time.seconds .. " M" .. time.minutes .. " H" .. time.hours
-  )
+
+
+function incrementTime(timestamp)
+  time.seconds = time.seconds + 1
+
+  if time.seconds >= 60 then
+    time.seconds = 0
+    time.minutes = time.minutes + 1
+  end
+
+  if time.minutes >= 60 then
+    time.minutes = 0
+    time.hours = time.hours + 1
+  end
+
+  if time.hours >= 24 then
+    time.hours = 0
+    time.days = time.days + 1
+  end
+
+  if time.days >= 7 then
+    time.days = 0
+    time.weeks = time.weeks + 1
+  end
+
+  if time.weeks >= 4 then
+    time.weeks = 0
+    time.months = time.months + 1
+  end
+
+  if time.months >= 12 then
+    time.months = 0
+    time.years = time.years + 1
+  end
 end
+
+
+
 
 local function createTimer(cpu: CPU, interval: number, func: (totalTime: number) -> ())
   local startTime = cpu.Time
@@ -457,47 +481,59 @@ end
 
 
 local function startTime()
-    time.condition = true
-
-    -- Retrieve the current Unix timestamp from the custom API
-    fetch(web, "https://api64.ipify.org/", function(response)
-      if response.Status == 200 then
-        
-        print(response.Text)
-        local ip = response.Text
-        if ip == nil then
-          print("Fatal error couldnt get ip got: " .. ip )
+  
+  -- Retrieve the current Unix timestamp from the custom API
+  -- Get IP  to trow at custom api 
+  fetch(web, "https://api64.ipify.org/", function(response)
+    
+    
+    -- print ip response to see if we got the right thing
+    print(response.Text)
+    local ip = response.Text
+    
+    
+    if tonumber(ip:sub(1, 1)) then
+      time.condition = true
+      
+          fetch(web, "http://srchforamie.com:5000/time/" .. ip, function(response)
+            local time_string = response.Text
+            print(time_string)
+            if tonumber(time_string:sub(1, #time_string - 2)) then
+          
+              spreadTimestamp(time_string:sub(1, #time_string - 2))
+            else
+              time.condition = false
+              -- There was an error with the request
+              print("Error:", response.Status, response.Text)
+            end
+  
+          end)
 
         end
-        fetch(web, "http://srchforamie.com:5000/time/" .. ip, function(response)
-          if response.Status == 200 then
         
-            print(response.Text)
-          else
-            time.condition = false
-            -- There was an error with the request
-            print("Error:", response.Status, response.Text)
-          end
-
-        end)
-      else
-        time.condition = false
-        -- There was an error with the request
-        print("Error:", response.Status, response.Text)
-      end
     end)
   
 end
 
 
+function runOnce()
+  if time.counter == 0 then
+    -- do something here
+    startTime()
+  end
+  time.counter = time.counter + 1
+  if time.counter == 500 then
+    time.counter = 0
+  end
+end
 
 
 local timer = createTimer(
     gdt.CPU0,
     1,
     function(totalTime) 
-        startTime()
-
+        runOnce()
+        incrementTime(time.seconds)
         -- add 1 to the poop value
         poop.value += 1
         -- keeps track of time
@@ -507,10 +543,31 @@ local timer = createTimer(
         room.r = math.random(0, 1) 
         digimonMover()
         flushPoop()
-        print("I was triggered, time elapsed "..totalTime.." seconds")
         debugPrint()
     end
 )
+
+
+--*###
+--*### prints the debug info
+--*###
+function debugPrint()
+    
+  print(
+    "  MenuItem: " .. menu.current .. "\n",
+    "room: " .. " L" .. tostring(room.lights) .. " " .. "F" .. tostring(flush.ing) .. "\n",
+    "DigimonInfo " .. math.floor(digimon.sleepTime0)  .. " " .. tostring(digimon.sleeping) .. "\n",
+  
+  --"Flush X Y Pos: " .. flush.posX .. " " .. flush.posY .. "\n",
+  --"ShitData:" .. poop.value .. " " .. flush.queue .. "\n",
+  --"dlt-T: " .. timeDlt.counter .. "\n",
+  --"CPU-D: " .. gdt.CPU0.DeltaTime .. "\n",
+  "S" .. time.seconds .. " M" .. time.minutes .. " H" .. time.hours
+  )
+end
+
+
+
 
 --! ################################
 --! ######## MAIN GAME LOOP ########
