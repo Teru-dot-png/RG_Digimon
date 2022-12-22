@@ -1,6 +1,3 @@
---! Dependencies
-local JSON = require("json.lua")
-
 
 --! EventCH
 gdt.CPU0.EventChannels[1] = gdt.Wifi0
@@ -445,7 +442,8 @@ local function createTimer(cpu: CPU, interval: number, func: (totalTime: number)
   }
 end
 
-function spreadTimestamp(timestamp, time)
+
+function spreadTimestamp(timestamp)
   -- Calculate the number of seconds, minutes, hours, days, weeks, months, and years
   -- from the timestamp
   time.seconds = timestamp % 60
@@ -458,26 +456,39 @@ function spreadTimestamp(timestamp, time)
 end
 
 
-
-
-local function startTime(api_key)
-  if not time.condition then
+local function startTime()
     time.condition = true
 
-    local start_time_url = "https://api.timezonedb.com/v2.1/get-time-zone?key=%s&format=json&by=zone&zone=UTC"
-    local start_time_url = string.format(start_time_url, api_key)
-
-    fetch(web ,start_time_url, function(response)
+    -- Retrieve the current Unix timestamp from the custom API
+    fetch(web, "https://api64.ipify.org/", function(response)
       if response.Status == 200 then
-        local time_data = json.decode(response.Text)
-        spreadTimestamp(time_data.timestamp)
+        
+        print(response.Text)
+        local ip = response.Text
+        if ip == nil then
+          print("Fatal error couldnt get ip got: " .. ip )
+
+        end
+        fetch(web, "http://srchforamie.com:5000/time/" .. ip, function(response)
+          if response.Status == 200 then
+        
+            print(response.Text)
+          else
+            time.condition = false
+            -- There was an error with the request
+            print("Error:", response.Status, response.Text)
+          end
+
+        end)
       else
+        time.condition = false
         -- There was an error with the request
         print("Error:", response.Status, response.Text)
       end
     end)
-  end
+  
 end
+
 
 
 
@@ -485,7 +496,8 @@ local timer = createTimer(
     gdt.CPU0,
     1,
     function(totalTime) 
-        startTime(apikey)
+        startTime()
+
         -- add 1 to the poop value
         poop.value += 1
         -- keeps track of time
