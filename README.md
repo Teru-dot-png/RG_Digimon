@@ -9,7 +9,7 @@ intirety of The digivice vpet in the RG game
 with some diferences so thats what im doing now
 torturing myself with lua hoping i dont forget C
 
-![image](https://user-images.githubusercontent.com/68662335/207744894-82fd785a-ae4a-465c-848c-2d74ee00acb6.png)
+![image](https://media.discordapp.net/attachments/1052353476304306208/1055661492395061298/image.png)
 
 
 
