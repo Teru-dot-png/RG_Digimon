@@ -6,6 +6,7 @@ local handleFuncs: {[number]: (result: WifiWebResponseEvent) -> ()} = {}
 
 --! Assets 
 local menuSprites:SpriteSheet = gdt.ROM.User.SpriteSheets.Digimon1 -- menu Sprites for main game
+local bgs:SpriteSheet = gdt.ROM.User.SpriteSheets.bgs -- menu Sprites for main game
 local digimonSprites:SpriteSheet = gdt.ROM.User.SpriteSheets.digimonNIGHTMARE1 -- digimon Sprites looking left
 local digimonSpritesFlip:SpriteSheet = gdt.ROM.User.SpriteSheets.digimonNIGHTMARE1Flip -- digimon Sprites looking right
 
@@ -64,9 +65,7 @@ local time = {
 
   --? keep track of digimon position and stats
   local digimon = {
-    pos = vec2(0,0), -- possition of Digimon
-    posX = 35,  -- X possition of Digimon
-    posY = 25,  -- Y possition of Digimon
+    pos = vec2(35,24), -- possition of Digimon
     r = 0, -- Random value
     sleepTime0 = 0, -- Sleep timer
     looking = 0, -- facing (0 = left, 1 = right)
@@ -197,8 +196,44 @@ local function fetch(wifi: Wifi, url: string, resultFunc: (response: WifiWebResp
   handleFuncs[handle] = resultFunc
 end
 
+local _darkRoom = 5
+local _paddingX = 8.5
+local _paddingY = 16
+local _spot = {
+one = 15,
+two = 15 *2, 
+three = 15 *3,
+four = 15 *4
+}
+function drawbg()
+  -- checks if lights are on or off
+  if room.lights then
+    vid:DrawSprite(vec2(_paddingX, _paddingY), bgs ,0 ,0, color.white, color.clear)
+    vid:DrawSprite(vec2(_paddingX + _spot.one , _paddingY), bgs ,1 ,0, color.white, color.clear)
+    vid:DrawSprite(vec2(_paddingX + _spot.two , _paddingY), bgs ,2 ,0, color.white, color.clear)
+    vid:DrawSprite(vec2(_paddingX + _spot.three , _paddingY), bgs ,3 ,0, color.white, color.clear)
+    vid:DrawSprite(vec2(_paddingX + _spot.four , _paddingY), bgs ,4 ,0, color.white, color.clear)
 
+    vid:DrawSprite(vec2(_paddingX, _paddingY + _spot.one), bgs ,0 ,1, color.white, color.clear)
+    vid:DrawSprite(vec2(_paddingX + _spot.one , _paddingY + _spot.one), bgs ,1 ,1, color.white, color.clear)
+    vid:DrawSprite(vec2(_paddingX + _spot.two , _paddingY + _spot.one), bgs ,2 ,1, color.white, color.clear)
+    vid:DrawSprite(vec2(_paddingX + _spot.three , _paddingY + _spot.one), bgs ,3 ,1, color.white, color.clear)
+    vid:DrawSprite(vec2(_paddingX + _spot.four , _paddingY + _spot.one), bgs ,4 ,1, color.white, color.clear)
+  else
 
+    vid:DrawSprite(vec2(_paddingX, _paddingY), bgs ,0 + _darkRoom ,0, color.white, color.clear)
+    vid:DrawSprite(vec2(_paddingX + _spot.one , _paddingY), bgs ,1 + _darkRoom ,0, color.white, color.clear)
+    vid:DrawSprite(vec2(_paddingX + _spot.two , _paddingY), bgs ,2 + _darkRoom ,0, color.white, color.clear)
+    vid:DrawSprite(vec2(_paddingX + _spot.three , _paddingY), bgs ,3 + _darkRoom ,0, color.white, color.clear)
+    vid:DrawSprite(vec2(_paddingX + _spot.four , _paddingY), bgs ,4 + _darkRoom ,0, color.white, color.clear)
+
+    vid:DrawSprite(vec2(_paddingX, _paddingY + _spot.one), bgs ,0 + _darkRoom ,1, color.white, color.clear)
+    vid:DrawSprite(vec2(_paddingX + _spot.one , _paddingY + _spot.one), bgs ,1 + _darkRoom ,1, color.white, color.clear)
+    vid:DrawSprite(vec2(_paddingX + _spot.two , _paddingY + _spot.one), bgs ,2 + _darkRoom ,1, color.white, color.clear)
+    vid:DrawSprite(vec2(_paddingX + _spot.three , _paddingY + _spot.one), bgs ,3 + _darkRoom ,1, color.white, color.clear)
+    vid:DrawSprite(vec2(_paddingX + _spot.four , _paddingY + _spot.one), bgs ,4 + _darkRoom ,1, color.white, color.clear)
+  end
+end
 
 
 
@@ -207,16 +242,14 @@ end
 function drawMenuSprites()
 
  -- Check if the room lights are off
-if room.lights == false then
-  -- If the room lights are off, fill the screen with black 
-  vid:FillRect(vec2(5, 15), vec2(72, 48), color.black)
+if room.lights == false then 
   -- Check if the digimon is sleeping
   if digimon.sleeping == true then
       -- If the digimon is sleeping, make zz appear when light off (draw zz sleeping particles in dark)
-      vid:DrawSprite(vec2(digimon.posX + 15 ,digimon.posY + room.r), menuSprites, 7, room.r, color.white, color.white)
+      vid:DrawSprite(digimon.pos + vec2(15, room.r), menuSprites, 6, room.r, color.white, color.clear)
   else
       -- If the digimon is not sleeping, and lights are of it will get angry (draw "#" angry symbol)
-      vid:DrawSprite(vec2(digimon.posX + 15 ,digimon.posY + room.r), menuSprites, 7, 2, color.white, color.white)
+      vid:DrawSprite(digimon.pos + vec2(15, room.r), menuSprites, 7, 2, color.white, color.clear)
   end
 
 -- If the room lights are on
@@ -224,7 +257,7 @@ else
   -- Check if the digimon is sleeping
   if digimon.sleeping == true then
       -- If the digimon is sleeping, draw (draw zz sleeping particles on a lit room)
-      vid:DrawSprite(vec2(digimon.posX + 15 ,digimon.posY + room.r), menuSprites, 6, room.r, color.white, color.clear ) 
+      vid:DrawSprite(digimon.pos + vec2(15, room.r), menuSprites, 6, room.r, color.white, color.clear ) 
   end
 end
 
@@ -233,13 +266,16 @@ end
   
 
 
+
   -- makes the menu borders
-  vid:DrawRect(vec2(5, 15), vec2(72, 48), color.black)
-  vid:FillRect(vec2(0, 15), vec2(4, 48), color.white)
-  vid:FillRect(vec2(73, 15), vec2(79, 48), color.white)
+  vid:DrawRect(vec2(7, 15), vec2(70, 47), color.black)
+  -- two lil cheeky borders on the sides so it hides the digimon 
+  vid:FillRect(vec2(0, 15), vec2(6, 47), color.white)
+  vid:FillRect(vec2(71, 15), vec2(79, 47), color.white)
 
 
-    
+
+      
   -- Draws the top menu
   vid:DrawSprite(vec2(5,5), menuSprites, 0, 0, color.white, color.clear)
   vid:DrawSprite(vec2(20,5), menuSprites, 1, 0, color.white, color.clear)
@@ -291,10 +327,10 @@ function digimonMover()
     if digimon.looking < 0.5 then
         
         
-        digimon.posX += 5 
+        digimon.pos += vec2(5, 0) 
     else
         
-        digimon.posX -= 5
+        digimon.pos -= vec2(5, 0)
     end
   end
     
@@ -404,13 +440,14 @@ function drawDigimon()
 end
 
 --  we do some colision checking in the rectangle
+-- Check of digimon is inside box
 function digimonColision()
    -- we check if we moved out of bounds and reset it to wall values
-   if digimon.posX < 0 then
-        digimon.posX = 2
+   if digimon.pos.X < 0 then
+        digimon.pos = vec2(3, 24)
     end
-    if digimon.posX > 71 then
-       digimon.posX = 59
+    if digimon.pos.X > 71 then
+       digimon.pos = vec2(60, 24)
     end
 end
 
@@ -516,6 +553,7 @@ local function startTime()
   
 end
 
+
 --*###
 --*### prints the debug info
 --*###
@@ -579,7 +617,7 @@ local timer = createTimer(
     gdt.CPU0,
     1,
     function() 
-      debugPrint("debug", "Pet", "X" .. digimon.posX, "Y" .. digimon.posY  )
+      debugPrint("debug", "Pet", "X" .. digimon.pos.X, "Y" .. digimon.pos.Y  )
         webtimeC = runEvery(function()
           startTime()
         end,
@@ -605,9 +643,9 @@ local timer = createTimer(
 
 
 
---! ################################
---! ######## MAIN GAME LOOP ########
---! ################################
+--! ################################################
+--! ######## MAIN GAME LOOP ########################
+--! ################################################
 function update()
   --? check if time has been updated from web
   if time.condition == false then
@@ -622,23 +660,22 @@ function update()
 
 
   -- clears the screen
-  vid:Clear(color.white)
+  vid:Clear(color(18,32,32))
+  -- draws the  background
+  drawbg()
   
   -- set according possitions
   cursor.pos = vec2(cursor.posX,cursor.posY)
-  digimon.pos = vec2(digimon.posX, digimon.posY)
   poop.pos = vec2(poop.posX, poop.posY)
   
   
   -- increase the counter by the CPU's DeltaTime
   timeDlt.counter += gdt.CPU0.DeltaTime
 
-  -- draws the cursor
-  drawSelSprite()
   
   -- does colision for digimon
   digimonColision()
-
+  
   -- handdler for digimon stuff
   digimonHandler()
   
@@ -658,6 +695,8 @@ function update()
   -- this function will draw the menu sprites
   drawMenuSprites()
   
+  -- draws the cursor
+  drawSelSprite()
   
 
   if but2.ButtonDown then
@@ -676,13 +715,13 @@ function update()
   if but0.ButtonDown then
     -- debug shityourself button
     -- poop.value += 4
-    -- digimon.posX += 4
+     digimon.pos += vec2(4, 0)
     -- digimon.sleepTime0 += 28799
-    if debugB == false then
-      debugB = true 
-    elseif debugB == true then
-      debugB = false
-    end
+    --if debugB == false then
+    --  debugB = true 
+    --elseif debugB == true then
+    --  debugB = false
+    --end
   end
   
 
