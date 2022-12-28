@@ -639,7 +639,6 @@ local debugTimer = createTimer(
 --! ######## MAIN GAME LOOP ########################
 --! ################################################
 function update()
-  
   --! important updater 
   timer.update()
   debugTimer.update()
