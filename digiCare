@@ -1,0 +1,32 @@
+--! Hardware
+local cpu:CPU = gdt.CPU0
+local vid:VideoChip = gdt.VideoChip0 -- graphics chip
+local web:Wifi = gdt.Wifi0 -- wifi web conectivity
+
+--! Assets
+local digimonSprites:SpriteSheet = gdt.ROM.User.SpriteSheets.digimonNIGHTMARE1 -- digimon Sprites looking left
+local digimonSpritesFlip:SpriteSheet = gdt.ROM.User.SpriteSheets.digimonNIGHTMARE1Flip -- digimon Sprites looking right
+
+
+local digiCare = {}
+
+--* this function will handdle the digimon sprites
+function digiCare.drawDigimon(digimon)
+
+   if digimon.sleeping == false then
+      -- if its looking left or right we use diferent sprites
+      if digimon.looking < 0.5 then
+         vid:DrawSprite(digimon.pos, digimonSpritesFlip, 0, 0 + digimon.r, color.white, color.clear)
+      else
+         vid:DrawSprite(digimon.pos, digimonSprites, 0, 0 + digimon.r, color.white, color.clear)
+      end
+   else
+      if digimon.looking < 0.5 then
+         vid:DrawSprite(digimon.pos, digimonSprites, 0, 3, color.white, color.clear)
+      else
+         vid:DrawSprite(digimon.pos, digimonSpritesFlip, 0, 3, color.white, color.clear)
+      end
+   end
+end
+
+return digiCare

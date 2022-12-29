@@ -20,6 +20,7 @@ local digimonSpritesFlip:SpriteSheet = gdt.ROM.User.SpriteSheets.digimonNIGHTMAR
 
 --! Code modules
 local drawbg = require("drawbg")
+local digiCare = require("digiCare")
 local dt = require("debugTools")
 local debugPrint = dt.debugPrint
 local createTimer = dt.createTimer
@@ -365,6 +366,9 @@ function flushPoop()
       if poop.hasHappend == true then
       poop.hasHappend = false
       poop.value = 0
+      debugPrint(time, debugBool,"info", "poop has been flushed")
+      else
+        debugPrint(time, debugBool,"info", "pressed flush with no shit")
       end
       --$ endof poophashappend
     end
@@ -416,36 +420,9 @@ end
 
 
 
---* this function will handdle the digimon sprites
-function drawDigimon()
 
-  if digimon.sleeping == false then
-    -- if its looking left or right we use diferent sprites 
-    if digimon.looking < 0.5 then 
-        vid:DrawSprite(digimon.pos, digimonSpritesFlip, 0, 0 + digimon.r, color.white, color.clear)
-    else
-        vid:DrawSprite(digimon.pos, digimonSprites, 0, 0 + digimon.r, color.white, color.clear)
-    end
-  else
-    if digimon.looking < 0.5 then 
-    vid:DrawSprite(digimon.pos, digimonSprites, 0, 3, color.white, color.clear)
-    else
-    vid:DrawSprite(digimon.pos, digimonSpritesFlip, 0, 3, color.white, color.clear)
-    end
-  end
-end
 
---  we do some colision checking in the rectangle
--- Check of digimon is inside box
-function digimonColision()
-   -- we check if we moved out of bounds and reset it to wall values
-   if digimon.pos.X < 0 then
-        digimon.pos = vec2(3, 24)
-    end
-    if digimon.pos.X > 71 then
-       digimon.pos = vec2(60, 24)
-    end
-end
+
 
 
 
@@ -485,6 +462,18 @@ function incrementTime()
   end
 end
 
+--  we do some colision checking in the rectangle
+-- Check of digimon is inside box
+function colision()
+  -- we check if we moved out of bounds and reset it to wall values
+  if digimon.pos.X < 0 then
+
+     digimon.pos = vec2(3, 24)
+  elseif digimon.pos.X > 71 then
+
+     digimon.pos = vec2(60, 24)
+  end
+end
 
 
 function spreadTimestamp(timestamp)
@@ -613,10 +602,10 @@ function update()
   timeDlt.counter += gdt.CPU0.DeltaTime
 
   -- does colision for digimon
-  digimonColision()
+  colision()
   
   -- handdler for digimon stuff
-  digimonHandler()
+  digiCare.digimonHandler(digimon)
   
   -- checks if you shat yourself
   poopCheck()
@@ -628,7 +617,7 @@ function update()
   drawflush()
   
   -- draws the digimon
-  drawDigimon()
+  drawDigimon(digimon)
   
   
   -- this function will draw the menu sprites
