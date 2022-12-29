@@ -20,13 +20,6 @@ function debugTools.createTimer(cpu: CPU, interval: number, func: (totalTime: nu
   end
 
 function debugTools.debugPrint(time, debugB, level, ...)
-    local levels = {
-        ["error"] = 1,
-        ["warning"] = 2,
-        ["info"] = 3,
-        ["debug"] = 4,
-        ["time"] = 5,
-    }
 
     -- Only show debugging messages if the `debug` flag is set to `true`
     if debugB then
@@ -56,6 +49,10 @@ function debugTools.debugPrint(time, debugB, level, ...)
         elseif level == "time" then
             setFgColor(95) -- magenta
             print(timestamp)
+            setFgColor(39) -- default color
+        elseif level == "digimon" then
+            setFgColor(33) -- magenta
+            print(timestamp, "DIGIMON:")
             setFgColor(39) -- default color
         else
             setFgColor(91) -- red
