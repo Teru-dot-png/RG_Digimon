@@ -523,7 +523,7 @@ local debugTimer = createTimer(
     5,
     function()
       --todo| info about positions for debugging
-      debugPrint(time, debugBool,"debug", "Digimon", "X" .. digimon.pos.X, "Y" .. digimon.pos.Y  )
+      debugPrint(time, debugBool,"digimon", "Digimon", "X" .. digimon.pos.X, "Y" .. digimon.pos.Y  )
       debugPrint(time, debugBool,"debug", "Cursor", "X".. cursor.pos.X, "Y".. cursor.pos.Y, "Menu:", menu.current)
       
       

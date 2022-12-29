@@ -54,6 +54,7 @@ function debugTools.debugPrint(time, debugB, level, ...)
             setFgColor(33) -- magenta
             print(timestamp, "DIGIMON:")
             setFgColor(39) -- default color
+            print(...)
         else
             setFgColor(91) -- red
             print(timestamp, "UNKNOWN:")
