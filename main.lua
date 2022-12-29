@@ -19,9 +19,10 @@ local digimonSprites:SpriteSheet = gdt.ROM.User.SpriteSheets.digimonNIGHTMARE1 -
 local digimonSpritesFlip:SpriteSheet = gdt.ROM.User.SpriteSheets.digimonNIGHTMARE1Flip -- digimon Sprites looking right
 
 --! Code modules
+local drawbg = require("drawbg")
 local dt = require("debugTools")
 local debugPrint = dt.debugPrint
-
+local createTimer = dt.createTimer
 
 
 --! Hardware
@@ -188,27 +189,16 @@ local cursor = {
 
 
 --? as much as i dont want to we need to keep track of poop
-poop = {
+local poop = {
   r = 0,-- random number from 0, 10000
   value = 0, -- time until digimon shits itself
   hasHappend = false, -- if it has shat itself
   anim = 0, -- number between 1, 0
-  pos = vec2(0, 0), -- shit position
-  posX = 35,
-  posY = 35
+  pos = vec2(35, 35) -- shit position
 }
 
 
 
-
---* gets executed every second for the duration of a second
-function deltaTimeHandler()
-  while (timeDlt.counter >= timeDlt.frameDuration) do
-    timeDlt.counter -= timeDlt.frameDuration
-    timeDlt.frameNum += 1
-   
-  end
-end
 
 --* this function sends a GET request to the specified URL and stores the provided function to be called when the request completes.
 local function fetch(wifi: Wifi, url: string, resultFunc: (response: WifiWebResponseEvent) -> ())
@@ -216,47 +206,6 @@ local function fetch(wifi: Wifi, url: string, resultFunc: (response: WifiWebResp
   handleFuncs[handle] = resultFunc
 end
 
---? Background values
-local _darkRoom = 5 -- We change to dark room set of sprites
-local _paddingX = 8.5 -- Padding for the X
-local _paddingY = 16 -- Padding for the Y
-local _spot = {
-one = 15, -- The first spot of the second bg sprite
-two = 15 *2, -- The second spot of the third bg sprite
-three = 15 *3, -- The third spot of the fourth bg sprite
-four = 15 *4 -- The fourth spot of the fifth bg sprite
-}
---* This function will draw the background acordingly to the light state
-function drawbg()
-  --$ Checks if lights are on or off
-  if room.lights then
-    vid:DrawSprite(vec2(_paddingX, _paddingY), bgs ,0 ,0, color.white, color.clear)
-    vid:DrawSprite(vec2(_paddingX + _spot.one , _paddingY), bgs ,1 ,0, color.white, color.clear)
-    vid:DrawSprite(vec2(_paddingX + _spot.two , _paddingY), bgs ,2 ,0, color.white, color.clear)
-    vid:DrawSprite(vec2(_paddingX + _spot.three , _paddingY), bgs ,3 ,0, color.white, color.clear)
-    vid:DrawSprite(vec2(_paddingX + _spot.four , _paddingY), bgs ,4 ,0, color.white, color.clear)
-
-    vid:DrawSprite(vec2(_paddingX, _paddingY + _spot.one), bgs ,0 ,1, color.white, color.clear)
-    vid:DrawSprite(vec2(_paddingX + _spot.one , _paddingY + _spot.one), bgs ,1 ,1, color.white, color.clear)
-    vid:DrawSprite(vec2(_paddingX + _spot.two , _paddingY + _spot.one), bgs ,2 ,1, color.white, color.clear)
-    vid:DrawSprite(vec2(_paddingX + _spot.three , _paddingY + _spot.one), bgs ,3 ,1, color.white, color.clear)
-    vid:DrawSprite(vec2(_paddingX + _spot.four , _paddingY + _spot.one), bgs ,4 ,1, color.white, color.clear)
-  else
-
-    vid:DrawSprite(vec2(_paddingX, _paddingY), bgs ,0 + _darkRoom ,0, color.white, color.clear)
-    vid:DrawSprite(vec2(_paddingX + _spot.one , _paddingY), bgs ,1 + _darkRoom ,0, color.white, color.clear)
-    vid:DrawSprite(vec2(_paddingX + _spot.two , _paddingY), bgs ,2 + _darkRoom ,0, color.white, color.clear)
-    vid:DrawSprite(vec2(_paddingX + _spot.three , _paddingY), bgs ,3 + _darkRoom ,0, color.white, color.clear)
-    vid:DrawSprite(vec2(_paddingX + _spot.four , _paddingY), bgs ,4 + _darkRoom ,0, color.white, color.clear)
-
-    vid:DrawSprite(vec2(_paddingX, _paddingY + _spot.one), bgs ,0 + _darkRoom ,1, color.white, color.clear)
-    vid:DrawSprite(vec2(_paddingX + _spot.one , _paddingY + _spot.one), bgs ,1 + _darkRoom ,1, color.white, color.clear)
-    vid:DrawSprite(vec2(_paddingX + _spot.two , _paddingY + _spot.one), bgs ,2 + _darkRoom ,1, color.white, color.clear)
-    vid:DrawSprite(vec2(_paddingX + _spot.three , _paddingY + _spot.one), bgs ,3 + _darkRoom ,1, color.white, color.clear)
-    vid:DrawSprite(vec2(_paddingX + _spot.four , _paddingY + _spot.one), bgs ,4 + _darkRoom ,1, color.white, color.clear)
-  end --$ endof room.lights check 
-
-end
 
 
 
@@ -435,6 +384,37 @@ function drawflush()
 end
 
 
+-- This function takes two arguments:
+-- `delay` is the amount of time to wait between each action
+-- `actions` is a table containing the actions to perform, in the order they should be performed
+function animate(delay, actions)
+  -- Initialize a counter variable to keep track of the current action
+  local i = 1
+  -- Initialize a variable to store the elapsed time
+  local elapsedTime = 0
+
+  -- This function will be returned and can be used to update the animation
+  return function()
+    -- Increment the elapsed time by the delta time
+    elapsedTime = elapsedTime + gdt.CPU0.DeltaTime
+    -- Check if the elapsed time is greater than or equal to the delay
+    if elapsedTime >= delay then
+      -- Reset the elapsed time
+      elapsedTime = elapsedTime - delay
+      -- Perform the current action
+      actions[i]()
+      -- Increment the counter
+      i = i + 1
+      -- Check if we've reached the end of the list of actions
+      if i > #actions then
+        -- If we have, reset the counter
+        i = 1
+      end
+    end
+  end
+end
+
+
 
 --* this function will handdle the digimon sprites
 function drawDigimon()
@@ -505,25 +485,6 @@ function incrementTime()
   end
 end
 
-
-
-
-local function createTimer(cpu: CPU, interval: number, func: (totalTime: number) -> ())
-  local startTime = cpu.Time
-  local lastInterval = startTime
-
-  return {
-      update = function()
-          if(cpu.Time - lastInterval) >= interval then 
-              lastInterval = cpu.Time
-              func(cpu.Time - startTime)
-          end
-      end,
-      getTotalTime = function()
-          return cpu.Time - startTime
-      end,
-  }
-end
 
 
 function spreadTimestamp(timestamp)
@@ -645,7 +606,7 @@ function update()
   -- clears the screen
   vid:Clear(Color(18,14,32))
   -- draws the  background
-  drawbg()
+  drawbg(room)
 
   
   -- increase the counter by the CPU's DeltaTime
@@ -708,5 +669,4 @@ end
    
   -- Time tracker 
   local elapsed = timer.getTotalTime()
-  deltaTimeHandler()
 end

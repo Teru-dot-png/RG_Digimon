@@ -2,6 +2,23 @@
 
 local debugTools = {} -- create an empty table to store the functions
 
+function debugTools.createTimer(cpu: CPU, interval: number, func: (totalTime: number) -> ())
+    local startTime = cpu.Time
+    local lastInterval = startTime
+  
+    return {
+        update = function()
+            if(cpu.Time - lastInterval) >= interval then 
+                lastInterval = cpu.Time
+                func(cpu.Time - startTime)
+            end
+        end,
+        getTotalTime = function()
+            return cpu.Time - startTime
+        end,
+    }
+  end
+
 function debugTools.debugPrint(time, debugB, level, ...)
     local levels = {
         ["error"] = 1,
