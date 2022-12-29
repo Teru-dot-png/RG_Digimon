@@ -333,12 +333,12 @@ function poopCheck()
 
 
   if digimon.sleeping == false then
-    poop.r = math.random( 0, 10000 )
-
+    
     --$ check if conditon  poop value is 10800, check if condition poop.r is 21  
-    if poop.r == 21 or poop.value >= 10800 then
-    poop.hasHappend = true
-    poop.value = 0
+    if poop.value >= 10800 then
+      poop.r = math.random( 2, 10)
+      poop.hasHappend = true
+      poop.value = 0
     end -- $ endof if poop condition
   end -- $ endof sleep Check
 end 
@@ -346,7 +346,7 @@ end
 --* this function will draw poop if digimon has done the peepee poopoo caacaa
 function drawPoop()
     if poop.hasHappend then
-    vid:DrawSprite(poop.pos, menuSprites, 6, poop.anim, color.white, color.clear)
+    vid:DrawSprite(poop.pos + vec2(poop.r,0) + vec2(flush.posX - 55,0), menuSprites, 6, poop.anim, color.white, color.clear)
     end
 end
 
@@ -605,7 +605,7 @@ function update()
   colision()
   
   -- handdler for digimon stuff
-  digiCare.digimonHandler(digimon)
+  digimonHandler()
   
   -- checks if you shat yourself
   poopCheck()
@@ -617,7 +617,7 @@ function update()
   drawflush()
   
   -- draws the digimon
-  drawDigimon(digimon)
+  digiCare.drawDigimon(digimon)
   
   
   -- this function will draw the menu sprites
@@ -642,9 +642,9 @@ function update()
   
 if but0.ButtonDown then
     -- debug shityourself button
-    -- poop.value += 4
+    poop.value += 5000
     -- digimon.pos += vec2(4, 0)
-     digimon.sleepTime0 += 28799
+    -- digimon.sleepTime0 += 28799
     --if debugBool == false then
     --  debugBool = true 
     --elseif debugBool == true then
