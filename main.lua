@@ -338,8 +338,8 @@ end
 
 --! $$$$$$$$$$ MAKE SOME SENSE OUT OF THIS BULL %%%%%%%%
 -- This function takes two arguments:
--- `delay` is the amount of time to wait between each action
--- `actions` is a table containing the actions to perform, in the order they should be performed
+-- @param delay is the amount of time to wait between each action
+-- @param actions is a table containing the actions to perform, in the order they should be performed
 function animate(delay, actions)
   -- Initialize a counter variable to keep track of the current action
   local i = 1
