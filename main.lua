@@ -20,6 +20,7 @@ local digimonSpritesFlip:SpriteSheet = gdt.ROM.User.SpriteSheets.digimonNIGHTMAR
 
 --! Code modules
 local drawbg = require("drawbg")
+local drawMenuSprites = require("drawMenuSprites")
 local digiCare = require("digiCare")
 local dt = require("debugTools")
 local debugPrint = dt.debugPrint
@@ -208,55 +209,6 @@ local function fetch(wifi: Wifi, url: string, resultFunc: (response: WifiWebResp
 end
 
 
-
-
-
---* this will draw menu sprites
-function drawMenuSprites()
-
- --$ Check if the room lights are off
-if room.lights == false then 
-  -- Check if the digimon is sleeping
-  if digimon.sleeping == true then
-      -- If the digimon is sleeping, make zz appear when light off (draw zz sleeping particles in dark)
-      vid:DrawSprite(digimon.pos + vec2(15, room.r), menuSprites, 6, room.r, color.white, color.clear)
-  else
-      -- If the digimon is not sleeping, and lights are of it will get angry (draw "#" angry symbol)
-      vid:DrawSprite(digimon.pos + vec2(15, room.r), menuSprites, 7, 2, color.white, color.clear)
-  end
-
--- If the room lights are on
-else
-  -- Check if the digimon is sleeping
-  if digimon.sleeping == true then
-      -- If the digimon is sleeping, draw (draw zz sleeping particles on a lit room)
-      vid:DrawSprite(digimon.pos + vec2(15, room.r), menuSprites, 6, room.r, color.white, color.clear ) 
-  end
-end--$ endof room.lights check
-
-  --! makes the menu borders $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-  vid:DrawRect(vec2(7, 15), vec2(70, 47), color.black)
-  -- two lil cheeky borders on the sides so it hides the digimon 
-  vid:FillRect(vec2(0, 15), vec2(6, 47), Color(0,4,25))
-  vid:FillRect(vec2(71, 15), vec2(79, 47), Color(0,4,25)) 
-  --! $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-
-  --! Draws the top menu %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  vid:DrawSprite(vec2(5,5), menuSprites, 0, 0, color.white, color.clear)
-  vid:DrawSprite(vec2(20,5), menuSprites, 1, 0, color.white, color.clear)
-  vid:DrawSprite(vec2(35,5), menuSprites, 2, 0, color.white, color.clear)
-  vid:DrawSprite(vec2(50,5), menuSprites, 3, 0, color.white, color.clear)
-  vid:DrawSprite(vec2(65,5), menuSprites, 4, 0, color.white, color.clear)
-  --!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-  --! draw the bottom menu @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-  vid:DrawSprite(vec2(5,50), menuSprites, 0, 1, color.white, color.clear)
-  vid:DrawSprite(vec2(20,50), menuSprites, 1, 1, color.white, color.clear)
-  vid:DrawSprite(vec2(35,50), menuSprites, 2, 1, color.white, color.clear)
-  vid:DrawSprite(vec2(50,50), menuSprites, 3, 1, color.white, color.clear)
-  vid:DrawSprite(vec2(65,50), menuSprites, 4, 1, color.white, color.clear)
-  --!@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-end
 
 --* draws the cursor at the position
 function drawSelSprite()
@@ -621,7 +573,7 @@ function update()
   
   
   -- this function will draw the menu sprites
-  drawMenuSprites()
+  drawMenuSprites(digimon, room)
   
   -- draws the cursor
   drawSelSprite()
