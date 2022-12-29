@@ -1,0 +1,138 @@
+--! Hardware
+local cpu:CPU = gdt.CPU0
+local vid:VideoChip = gdt.VideoChip0 -- graphics chip
+local web:Wifi = gdt.Wifi0 -- wifi web conectivity
+
+--! Assets
+local bgs:SpriteSheet = gdt.ROM.User.SpriteSheets.bgs -- Background sprites for the game
+local menuSprites:SpriteSheet = gdt.ROM.User.SpriteSheets.Digimon1 -- Menu Sprites for main game
+local digimonSprites:SpriteSheet = gdt.ROM.User.SpriteSheets.digimonNIGHTMARE1 -- digimon Sprites looking left
+local digimonSpritesFlip:SpriteSheet = gdt.ROM.User.SpriteSheets.digimonNIGHTMARE1Flip -- digimon Sprites looking right
+
+
+--? Background values
+local _darkRoom = 5 -- We change to dark room set of sprites
+local _paddingX = 8.5 -- Padding for the X
+local _paddingY = 16 -- Padding for the Y
+local _spot = {
+one = 15, -- The first spot of the second bg sprite
+two = 15 *2, -- The second spot of the third bg sprite
+three = 15 *3, -- The third spot of the fourth bg sprite
+four = 15 *4 -- The fourth spot of the fifth bg sprite
+}
+
+local gfx = {}
+
+--* this function will handdle the digimon sprites
+function gfx.drawDigimon(digimon)
+
+    if digimon.sleeping == false then
+       -- if its looking left or right we use diferent sprites
+       if digimon.looking < 0.5 then
+          vid:DrawSprite(digimon.pos, digimonSpritesFlip, 0, 0 + digimon.r, color.white, color.clear)
+       else
+          vid:DrawSprite(digimon.pos, digimonSprites, 0, 0 + digimon.r, color.white, color.clear)
+       end
+    else
+       if digimon.looking < 0.5 then
+          vid:DrawSprite(digimon.pos, digimonSprites, 0, 3, color.white, color.clear)
+       else
+          vid:DrawSprite(digimon.pos, digimonSpritesFlip, 0, 3, color.white, color.clear)
+       end
+    end
+ end
+ 
+
+
+--* draws the thing that flushes the shiz
+function gfx.drawflush(flush)
+
+    if flush.queue > 0.5 then
+    vid:DrawSprite(vec2(flush.posX, flush.posY), menuSprites, 4, 3, color.white, color.clear)
+    vid:DrawSprite(vec2(flush.posX, flush.posY + 16), menuSprites, 4, 3, color.white, color.clear)
+    end
+  
+  end
+
+
+--* This function will draw the background acordingly to the light state
+function gfx.drawbg(room)
+    --$ Checks if lights are on or off
+    if room.lights then
+      vid:DrawSprite(vec2(_paddingX, _paddingY), bgs ,0 ,0, color.white, color.clear)
+      vid:DrawSprite(vec2(_paddingX + _spot.one , _paddingY), bgs ,1 ,0, color.white, color.clear)
+      vid:DrawSprite(vec2(_paddingX + _spot.two , _paddingY), bgs ,2 ,0, color.white, color.clear)
+      vid:DrawSprite(vec2(_paddingX + _spot.three , _paddingY), bgs ,3 ,0, color.white, color.clear)
+      vid:DrawSprite(vec2(_paddingX + _spot.four , _paddingY), bgs ,4 ,0, color.white, color.clear)
+  
+      vid:DrawSprite(vec2(_paddingX, _paddingY + _spot.one), bgs ,0 ,1, color.white, color.clear)
+      vid:DrawSprite(vec2(_paddingX + _spot.one , _paddingY + _spot.one), bgs ,1 ,1, color.white, color.clear)
+      vid:DrawSprite(vec2(_paddingX + _spot.two , _paddingY + _spot.one), bgs ,2 ,1, color.white, color.clear)
+      vid:DrawSprite(vec2(_paddingX + _spot.three , _paddingY + _spot.one), bgs ,3 ,1, color.white, color.clear)
+      vid:DrawSprite(vec2(_paddingX + _spot.four , _paddingY + _spot.one), bgs ,4 ,1, color.white, color.clear)
+    else
+  
+      vid:DrawSprite(vec2(_paddingX, _paddingY), bgs ,0 + _darkRoom ,0, color.white, color.clear)
+      vid:DrawSprite(vec2(_paddingX + _spot.one , _paddingY), bgs ,1 + _darkRoom ,0, color.white, color.clear)
+      vid:DrawSprite(vec2(_paddingX + _spot.two , _paddingY), bgs ,2 + _darkRoom ,0, color.white, color.clear)
+      vid:DrawSprite(vec2(_paddingX + _spot.three , _paddingY), bgs ,3 + _darkRoom ,0, color.white, color.clear)
+      vid:DrawSprite(vec2(_paddingX + _spot.four , _paddingY), bgs ,4 + _darkRoom ,0, color.white, color.clear)
+  
+      vid:DrawSprite(vec2(_paddingX, _paddingY + _spot.one), bgs ,0 + _darkRoom ,1, color.white, color.clear)
+      vid:DrawSprite(vec2(_paddingX + _spot.one , _paddingY + _spot.one), bgs ,1 + _darkRoom ,1, color.white, color.clear)
+      vid:DrawSprite(vec2(_paddingX + _spot.two , _paddingY + _spot.one), bgs ,2 + _darkRoom ,1, color.white, color.clear)
+      vid:DrawSprite(vec2(_paddingX + _spot.three , _paddingY + _spot.one), bgs ,3 + _darkRoom ,1, color.white, color.clear)
+      vid:DrawSprite(vec2(_paddingX + _spot.four , _paddingY + _spot.one), bgs ,4 + _darkRoom ,1, color.white, color.clear)
+    end --$ endof room.lights check 
+  
+  end
+
+  --* this will draw menu sprites
+   function gfx.drawMenuSprites(digimon, room)
+  
+      --$ Check if the room lights are off
+      if room.lights == false then
+          -- Check if the digimon is sleeping
+          if digimon.sleeping == true then
+              -- If the digimon is sleeping, make zz appear when light off (draw zz sleeping particles in dark)
+              vid:DrawSprite(digimon.pos + vec2(15, room.r), menuSprites, 6, room.r, color.white, color.clear)
+          else
+              -- If the digimon is not sleeping, and lights are of it will get angry (draw "#" angry symbol)
+              vid:DrawSprite(digimon.pos + vec2(15, room.r), menuSprites, 7, 2, color.white, color.clear)
+          end
+  
+          -- If the room lights are on
+      else
+          -- Check if the digimon is sleeping
+          if digimon.sleeping == true then
+              -- If the digimon is sleeping, draw (draw zz sleeping particles on a lit room)
+              vid:DrawSprite(digimon.pos + vec2(15, room.r), menuSprites, 6, room.r, color.white, color.clear)
+          end
+      end --$ endof room.lights check
+  
+      --! makes the menu borders $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+      vid:DrawRect(vec2(7, 15), vec2(70, 47), color.black)
+      -- two lil cheeky borders on the sides so it hides the digimon
+      vid:FillRect(vec2(0, 15), vec2(6, 47), Color(0, 4, 25))
+      vid:FillRect(vec2(71, 15), vec2(79, 47), Color(0, 4, 25))
+      --! $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+  
+      --! Draws the top menu %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+      vid:DrawSprite(vec2(5, 5), menuSprites, 0, 0, color.white, color.clear)
+      vid:DrawSprite(vec2(20, 5), menuSprites, 1, 0, color.white, color.clear)
+      vid:DrawSprite(vec2(35, 5), menuSprites, 2, 0, color.white, color.clear)
+      vid:DrawSprite(vec2(50, 5), menuSprites, 3, 0, color.white, color.clear)
+      vid:DrawSprite(vec2(65, 5), menuSprites, 4, 0, color.white, color.clear)
+      --!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  
+      --! draw the bottom menu @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+      vid:DrawSprite(vec2(5, 50), menuSprites, 0, 1, color.white, color.clear)
+      vid:DrawSprite(vec2(20, 50), menuSprites, 1, 1, color.white, color.clear)
+      vid:DrawSprite(vec2(35, 50), menuSprites, 2, 1, color.white, color.clear)
+      vid:DrawSprite(vec2(50, 50), menuSprites, 3, 1, color.white, color.clear)
+      vid:DrawSprite(vec2(65, 50), menuSprites, 4, 1, color.white, color.clear)
+      --!@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+  end
+
+
+  return gfx

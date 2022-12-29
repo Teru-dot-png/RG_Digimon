@@ -17,11 +17,11 @@ local menuSprites:SpriteSheet = gdt.ROM.User.SpriteSheets.Digimon1 -- Menu Sprit
 local bgs:SpriteSheet = gdt.ROM.User.SpriteSheets.bgs -- Background sprites for the game
 local digimonSprites:SpriteSheet = gdt.ROM.User.SpriteSheets.digimonNIGHTMARE1 -- digimon Sprites looking left
 local digimonSpritesFlip:SpriteSheet = gdt.ROM.User.SpriteSheets.digimonNIGHTMARE1Flip -- digimon Sprites looking right
-
+local shitsing:AudioSample = gdt.ROM.User.AudioSamples["shitsing.wav"]
+local flushing:AudioSample = gdt.ROM.User.AudioSamples["flushing.wav"]
 --! Code modules
-local drawbg = require("drawbg")
-local drawMenuSprites = require("drawMenuSprites")
 local digiCare = require("digiCare")
+local gfx = require("gfx")
 local dt = require("debugTools")
 local debugPrint = dt.debugPrint
 local createTimer = dt.createTimer
@@ -96,11 +96,11 @@ local time = {
   }
   
   --? flush data 
-  flush = {
-ing = false, -- check if currently "flush-ing"
-queue = 0, -- asks a queue if it can flush
-posX = 55, -- possition of water
-posY = 16 -- possition of water
+flush = {
+    ing = false, -- check if currently "flush-ing"
+    queue = 0, -- asks a queue if it can flush
+    posX = 55, -- possition of water
+    posY = 16 -- possition of water
 }
 
 --? keep track of menu
@@ -138,9 +138,10 @@ local menu = {
     {name = "flush", action = function() 
       debugPrint(time, debugBool,"info","Menu position 4 selected") 
       -- if sleeping = true we cant flush
-      if digimon.sleeping == false then
+      if not digimon.sleeping then
         -- if room lights are of theres also no reason to flush
-        if room.lights == true then
+        if room.lights then
+          gdt.AudioChip0:Play(flushing,2)
           flush.queue = 1 
           flush.ing = 1
         end
@@ -149,9 +150,9 @@ local menu = {
     {name = "lights", action = function() 
       debugPrint(time, debugBool,"info","Menu position 5 selected")
       -- turn on and off room lights
-      if room.lights == false then
+      if not room.lights then
         room.lights = true 
-      elseif room.lights == true then
+      elseif room.lights then
         room.lights = false
       end
     end},
@@ -236,7 +237,7 @@ end
 --* this function will move the digimon once and a while
 function digimonMover()
     
-  if digimon.sleeping == false then
+  if not digimon.sleeping then
     -- random number for looking left or right
     digimon.looking = math.random()
     
@@ -284,10 +285,11 @@ end
 function poopCheck()
 
 
-  if digimon.sleeping == false then
+  if not digimon.sleeping then
     
     --$ check if conditon  poop value is 10800, check if condition poop.r is 21  
     if poop.value >= 10800 then
+      gdt.AudioChip0:Play(shitsing,1)
       poop.r = math.random( 2, 10)
       poop.hasHappend = true
       poop.value = 0
@@ -297,6 +299,7 @@ end
 
 --* this function will draw poop if digimon has done the peepee poopoo caacaa
 function drawPoop()
+
     if poop.hasHappend then
     vid:DrawSprite(poop.pos + vec2(poop.r,0) + vec2(flush.posX - 55,0), menuSprites, 6, poop.anim, color.white, color.clear)
     end
@@ -315,7 +318,8 @@ function flushPoop()
     flush.queue = 0
     flush.posX = 55
     flush.ing = false
-      if poop.hasHappend == true then
+      if poop.hasHappend then
+        
       poop.hasHappend = false
       poop.value = 0
       debugPrint(time, debugBool,"info", "poop has been flushed")
@@ -329,17 +333,8 @@ function flushPoop()
    --$ endof flushqueue
 end
 
---* draws the thing that flushes the shiz
-function drawflush()
 
-  if flush.queue > 0.5 then
-  vid:DrawSprite(vec2(flush.posX, flush.posY), menuSprites, 4, 3, color.white, color.clear)
-  vid:DrawSprite(vec2(flush.posX, flush.posY + 16), menuSprites, 4, 3, color.white, color.clear)
-  end
-
-end
-
-
+--! $$$$$$$$$$ MAKE SOME SENSE OUT OF THIS BULL %%%%%%%%
 -- This function takes two arguments:
 -- `delay` is the amount of time to wait between each action
 -- `actions` is a table containing the actions to perform, in the order they should be performed
@@ -547,7 +542,7 @@ function update()
   -- clears the screen
   vid:Clear(Color(18,14,32))
   -- draws the  background
-  drawbg(room)
+  gfx.drawbg(room)
 
   
   -- increase the counter by the CPU's DeltaTime
@@ -566,14 +561,14 @@ function update()
   drawPoop()
   
   -- draws the little waves to flush shit
-  drawflush()
+  gfx.drawflush(flush)
   
   -- draws the digimon
-  digiCare.drawDigimon(digimon)
+  gfx.drawDigimon(digimon)
   
   
   -- this function will draw the menu sprites
-  drawMenuSprites(digimon, room)
+  gfx.drawMenuSprites(digimon, room)
   
   -- draws the cursor
   drawSelSprite()
@@ -597,9 +592,9 @@ if but0.ButtonDown then
     poop.value += 5000
     -- digimon.pos += vec2(4, 0)
     -- digimon.sleepTime0 += 28799
-    --if debugBool == false then
+    --if not debugBool then
     --  debugBool = true 
-    --elseif debugBool == true then
+    --elseif debugBool then
     --  debugBool = false
     --end
 end
