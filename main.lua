@@ -19,6 +19,8 @@ local digimonSprites:SpriteSheet = gdt.ROM.User.SpriteSheets.digimonNIGHTMARE1 -
 local digimonSpritesFlip:SpriteSheet = gdt.ROM.User.SpriteSheets.digimonNIGHTMARE1Flip -- digimon Sprites looking right
 local shitsing:AudioSample = gdt.ROM.User.AudioSamples["shitsing.wav"]
 local flushing:AudioSample = gdt.ROM.User.AudioSamples["flushing.wav"]
+local bootsnd:AudioSample = gdt.ROM.User.AudioSamples["boot.wav"]
+
 --! Code modules
 local digiCare = require("digiCare")
 local gfx = require("gfx")
@@ -531,11 +533,18 @@ local debugTimer = createTimer(
       end--$ endof timeHealth check
     end)
 
-
+local boot = false
 --! ################################################
 --! ######## MAIN GAME LOOP ########################
 --! ################################################
 function update()
+
+ if not boot then
+  gdt.AudioChip0:Play(bootsnd,1)
+  gfx.drawBoot()
+  sleep(2)
+  boot = true
+ end
   --! important updater 
   timer.update()
   debugTimer.update()

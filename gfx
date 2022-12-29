@@ -134,5 +134,13 @@ function gfx.drawbg(room)
       --!@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
   end
 
+  function gfx.drawBoot()
+    vid:Clear(Color(64,51,82))
+    vid:DrawSprite(vec2(29,25), menuSprites, 8, 0, color.white, color.clear)
+	vid:DrawCircle(vec2(38,35),20,color.cyan)
+end
+
+
+
 
   return gfx
