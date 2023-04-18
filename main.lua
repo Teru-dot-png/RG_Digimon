@@ -48,6 +48,9 @@ This function is then called with the event as its argument. Finally, the functi
 for the given RequestHandle is removed. This allows for the ability to associate a specific function with 
 a specific web request, allowing for better organization and management of web requests in the code.
 ]]--
+-- This function is an event handler for the Wifi module, specifically for the WifiWebResponseEvent.
+-- @param wifi: Wifi - The Wifi module that triggered the event.
+-- @param event: WifiWebResponseEvent - The event that was triggered.
 function eventChannel1(_: Wifi, event: WifiWebResponseEvent)
   handleFuncs[event.RequestHandle](event)
   handleFuncs[event.RequestHandle] = nil
@@ -236,6 +239,7 @@ function CursorHandler()
     end
 end
 
+
 --* this function will move the digimon once and a while
 function digimonMover()
     
@@ -376,7 +380,7 @@ end
 
 
 
-
+--* this function will increment the time
 function incrementTime()
   time.seconds = time.seconds + 1
 
@@ -411,8 +415,8 @@ function incrementTime()
   end
 end
 
---  we do some colision checking in the rectangle
--- Check of digimon is inside box
+--*  we do some colision checking in the rectangle
+--* Check if digimon is inside box
 function colision()
   -- we check if we moved out of bounds and reset it to wall values
   if digimon.pos.X < 0 then
@@ -424,20 +428,34 @@ function colision()
   end
 end
 
-
-function spreadTimestamp(timestamp)
-  -- Calculate the number of seconds, minutes, hours, days, weeks, months, and years
-  -- from the timestamp
-  time.seconds = timestamp % 60
-  time.minutes = math.floor(timestamp / 60) % 60
-  time.hours = math.floor(timestamp / 3600) % 24
-  time.days = math.floor(timestamp / 86400) % 7
-  time.weeks = math.floor(timestamp / 604800) % 4
-  time.months = math.floor(timestamp / 2629743) % 12
-  time.years = math.floor(timestamp / 31556926)
+--* this function will spread the timestamp to the time table
+-- @param timestamp_str is the timestamp string
+function spreadTimestamp(timestamp_str)
+  debugPrint(time, debugBool,"info", "timestamp_str: " .. timestamp_str)
+  -- it should have a time format like this "datetime: 2023-04-17T23:26:15.425179-03:00" it has 32 characters for the timestamp
+  -- we use the find function to find the datetime: and then we add 9 to get the start of the timestamp 
+  local start = timestamp_str:find("datetime: ") + 10
+  -- now we use the start and it has 32 characters
+  local datetime = timestamp_str:sub(start, start + 32)
+  debugPrint(time, debugBool,"info", "datetime: " .. datetime)
+  --the pattern is "YYYY-MM-DDTHH:MM:SS.000000-00:00"
+  -- we use the sub function to get the year, month, day, hour, minute and second
+  time.years = tonumber(datetime:sub(1, 4))
+  debugPrint(time, debugBool,"info", "time.years: " .. datetime:sub(1, 4))
+  time.months = tonumber(datetime:sub(6, 7))
+  debugPrint(time, debugBool,"info", "time.months: " .. datetime:sub(6, 7))
+  time.days = tonumber(datetime:sub(9, 10))
+  debugPrint(time, debugBool,"info", "time.days: " .. datetime:sub(9, 10))
+  time.hours = tonumber(datetime:sub(12, 13))
+  debugPrint(time, debugBool,"info", "time.hours: " .. datetime:sub(12, 13))
+  time.minutes = tonumber(datetime:sub(15, 16))
+  debugPrint(time, debugBool,"info", "time.minutes: " .. datetime:sub(15, 16))
+  time.seconds = tonumber(datetime:sub(18, 19))
+  debugPrint(time, debugBool,"info", "time.seconds: " .. datetime:sub(18, 19))
+  
 end
 
-
+--* this function will get the current time from the web
 local function getTimeFromWeb()
   debugPrint(time, debugBool,"info", "TIME IS UPDATING...")
   time.health.updating = true
@@ -450,18 +468,33 @@ local function getTimeFromWeb()
     if tonumber(ip:sub(1, 1)) then
       time.health.condition = true
       
-      fetch(web, "http://srchforamie.com:5000/time/" .. ip, function(response)
+      fetch(web, "http://worldtimeapi.org/api/ip/" .. ip .. ".txt" , function(response)
+        --[[
+          (... etc ...) is a indicatior that the text is cut off
+        responds with a text like this:
+        ... etc ...
+          datetime: 2023-04-17T23:26:15.425179-03:00
+        ... etc ...
+        ]]   
+        print(response.Text)
         local time_string = response.Text
-        debugPrint(time, debugBool,"info","GOT UNIX" ,time_string)
-        if tonumber(time_string:sub(1, #time_string - 2)) then
+        debugPrint(time, debugBool,"info","GOT WEBTextTime" ,time_string)
+        -- here we do a check to see if we got a valid response
+
+          singleChar = time_string:sub(1,1)
+          debugPrint(time, debugBool,"info", "GOT", singleChar)
+          -- now we check if its alphabetic with our function
+        if singleChar == "a" then
+          time.health.condition = true
           debugPrint(time, debugBool,"info", "TIME HAS BEEN UPDATED")
-          spreadTimestamp(time_string:sub(1, #time_string - 2))
+          spreadTimestamp(time_string)
         else
           time.health.condition = false
           -- There was an error with the request
-          debugPrint(time, debugBool,"error", "WEB", response.Status, response.Text)
+          debugPrint(time, debugBool,"error", "WEB Error wait 1 minute\nWe got: ", response.Status, response.Text)
+          -- we wait 1 minute before trying again
+          time.health.updating = false
         end
-        
       end)
     else
       debugPrint(time, debugBool,"error", "GOT", response.Text)
@@ -474,10 +507,13 @@ end
 
 
 
-
+--* this variable will count up to 8004 and then reset to 0 to run the time update
 local webtimeC = 0
 
-
+--* this function will run a function every x times
+-- @param func is the function to run
+-- @param counting is the counter
+-- @param ends is the number of times to run the function
 function runEvery(func, counting, ends)
   if counting == 0 then
     -- do something here
@@ -490,6 +526,7 @@ function runEvery(func, counting, ends)
   return counting
 end
 
+
 local timer = createTimer(
     gdt.CPU0,
     0.5,
@@ -498,7 +535,7 @@ local timer = createTimer(
           getTimeFromWeb()
         end,
           webtimeC,
-          5000 -- 82 minutes
+          8004 -- 2 hours and 13 minutes
         )
         incrementTime()
         -- add 1 to the poop value
@@ -529,9 +566,13 @@ local debugTimer = createTimer(
       --$ check if condition of time health is ok
       if not time.health.condition and time.health.updating then
         debugPrint(time, debugBool,"warning", "TimeNotStarted/NotUpdated YOU ARE OFFLINE")
-        -- Output: "[HH:MM:SS] WARNING: TimeNotStarted/NotUpdated YOU ARE OFFLINE"
-      end--$ endof timeHealth check
-    end)
+        local countRestart = 0
+        countRestart += 1
+        if countRestart == 12 then
+          getTimeFromWeb()
+        end
+      end --$ endof timeHealth check
+end)
 
 local boot = false
 --! ################################################
