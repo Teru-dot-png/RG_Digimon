@@ -1,40 +1,28 @@
 # RG_Digimon
-drew a whole case with pixels for this digivice
 
-![image](https://user-images.githubusercontent.com/68662335/207744644-12608f44-b9af-4c86-99eb-768a5b5a6a87.png)
+Welcome to RG_Digimon, a Digivice virtual pet game created in Lua using the Retrogadgets engine! 
 
-# resolve
-so i decided why dont i learn Lua and code the
-intirety of The digivice vpet in the RG game
-with some diferences so thats what im doing now
-torturing myself with lua hoping i dont forget C
+![image](https://user-images.githubusercontent.com/68662335/232682871-8e7c556d-0a6b-488f-8b2b-53100b1ee99a.png)
 
-![image](https://media.discordapp.net/attachments/1052353476304306208/1055661492395061298/image.png)
+## Game Description/Hardware
 
+In this game, you will be raising and training your own Digimon virtual pet. The Digivice is equipped with 3 buttons, 1 network card, 1 CPU, 1 GPU, 1 audio chip, 1 flash memory, and 1 ROM.
+
+![image](https://user-images.githubusercontent.com/68662335/232683044-422f7368-aecc-4105-9aa8-0ba79007a3a0.png) ![image](https://user-images.githubusercontent.com/68662335/232683065-1286de71-c387-40cf-8ad1-1d606bdde8e1.png) ![image](https://user-images.githubusercontent.com/68662335/232683119-6f298486-7f0c-4e14-95a3-148b06bd0561.png) ![image](https://user-images.githubusercontent.com/68662335/232683176-496f96ae-7a3e-4b3e-8b61-cc29cd62627e.png) ![image](https://user-images.githubusercontent.com/68662335/232683227-da662ed0-3550-4bf5-bf73-8237b9570c60.png)
 
 
 
 
-# fake hardware specs
-
-3 buttons 
-
-![image](https://user-images.githubusercontent.com/68662335/207745014-edfa708a-0188-47da-953c-c307d841961e.png)
-
-1 network card
-
-![image](https://user-images.githubusercontent.com/68662335/207745046-3e6de30a-1cd4-44d6-bc80-13a99880a8fc.png)
-
-1 connector for future plans
-
-![image](https://user-images.githubusercontent.com/68662335/207745099-0db2bda7-143d-4d3d-b504-7ad9e8b4a373.png)
-
-1 cpu, 1 gpu, 1 audio chip
-
-![image](https://user-images.githubusercontent.com/68662335/207745202-9ee1ec2e-ca08-433d-aaa0-86b7489b38ce.png)
-
-1 flash memory and 1 rom
-
-![image](https://user-images.githubusercontent.com/68662335/207745294-cc33bc92-8bfa-4e51-b474-41a633a1e292.png)
 
 
+## Development
+
+This game was created using Lua and the Retrogadgets engine. If you are interested in contributing to the development of this game, feel free to submit a pull request or open an issue on the GitHub repository.
+
+![image](https://user-images.githubusercontent.com/68662335/232682804-a6517b52-b982-47ac-909a-cf105f5db2e9.png)
+
+## Acknowledgements
+
+Special thanks to the Retrogadgets team for creating the "engine" used to create this game. 
+
+![image](https://user-images.githubusercontent.com/68662335/232682627-d5a734bd-a290-40e6-9ece-6a9efdd77bb4.png)
