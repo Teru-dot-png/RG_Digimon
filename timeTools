@@ -1,0 +1,138 @@
+
+--! Hardware
+local cpu:CPU = gdt.CPU0
+local vid:VideoChip = gdt.VideoChip0 -- graphics chip
+local web:Wifi = gdt.Wifi0 -- wifi web conectivity
+
+--! Assets
+local bgs:SpriteSheet = gdt.ROM.User.SpriteSheets.bgs -- Background sprites for the game
+local menuSprites:SpriteSheet = gdt.ROM.User.SpriteSheets.Digimon1 -- Menu Sprites for main game
+local digimonSprites:SpriteSheet = gdt.ROM.User.SpriteSheets.digimonNIGHTMARE1 -- digimon Sprites looking left
+local digimonSpritesFlip:SpriteSheet = gdt.ROM.User.SpriteSheets.digimonNIGHTMARE1Flip -- digimon Sprites looking right
+
+--! Code modules
+local dt = require("debugTools")
+local debugPrint = dt.debugPrint
+
+
+local debugBool = true
+
+
+local timeTools = {}
+
+
+
+--* this function will spread the timestamp to the time table
+-- @param timestamp_str is the timestamp string
+-- @param time is the time table
+function spreadTimestamp(timestamp_str, time)
+  debugPrint(time, debugBool,"info", "timestamp_str: " .. timestamp_str)
+  -- it should have a time format like this "datetime: 2023-04-17T23:26:15.425179-03:00" it has 32 characters for the timestamp
+  -- we use the find function to find the datetime: and then we add 9 to get the start of the timestamp 
+  local start = timestamp_str:find("datetime: ") + 10
+  -- now we use the start and it has 32 characters
+  local datetime = timestamp_str:sub(start, start + 32)
+  debugPrint(time, debugBool,"info", "datetime: " .. datetime)
+  --the pattern is "YYYY-MM-DDTHH:MM:SS.000000-00:00"
+  -- we use the sub function to get the year, month, day, hour, minute and second
+  time.years = tonumber(datetime:sub(1, 4))
+  debugPrint(time, debugBool,"info", "time.years: " .. datetime:sub(1, 4))
+  time.months = tonumber(datetime:sub(6, 7))
+  debugPrint(time, debugBool,"info", "time.months: " .. datetime:sub(6, 7))
+  time.days = tonumber(datetime:sub(9, 10))
+  debugPrint(time, debugBool,"info", "time.days: " .. datetime:sub(9, 10))
+  time.hours = tonumber(datetime:sub(12, 13))
+  debugPrint(time, debugBool,"info", "time.hours: " .. datetime:sub(12, 13))
+  time.minutes = tonumber(datetime:sub(15, 16))
+  debugPrint(time, debugBool,"info", "time.minutes: " .. datetime:sub(15, 16))
+  time.seconds = tonumber(datetime:sub(18, 19))
+  debugPrint(time, debugBool,"info", "time.seconds: " .. datetime:sub(18, 19))
+  
+  return time
+end
+
+
+
+
+
+
+--* this function will create a timer
+-- @param cpu is the cpu object
+-- @param interval is the interval of the timer
+-- @param func is the function to run
+-- @returns the timer object
+function timeTools.createTimer(cpu: CPU, interval: number, func: (totalTime: number) -> ())
+  local startTime = cpu.Time
+  local lastInterval = startTime
+
+  return {
+      update = function()
+          if(cpu.Time - lastInterval) >= interval then 
+              lastInterval = cpu.Time
+              func(cpu.Time - startTime)
+          end
+      end,
+      getTotalTime = function()
+          return cpu.Time - startTime
+      end,
+  }
+end
+
+
+--* this function will run a function every x times
+-- @param func is the function to run
+-- @param counting is the counter
+-- @param ends is the number of times to run the function
+function timeTools.runEvery(func, counting, ends)
+  if counting == 0 then
+    -- do something here
+    func()
+  end
+  counting = counting + 1
+  if counting == ends then
+    counting = 0
+  end
+  return counting
+end
+
+--* this function will increment the time
+-- @param time is the time object
+-- @returns the time object
+--$ the object this function is attached to is time
+function timeTools.incrementTime(time: {seconds: number, minutes: number, hours: number, days: number, weeks: number, months: number, years: number})
+  time.seconds = time.seconds + 1
+
+  if time.seconds >= 60 then
+    time.seconds = 0
+    time.minutes = time.minutes + 1
+  end
+
+  if time.minutes >= 60 then
+    time.minutes = 0
+    time.hours = time.hours + 1
+  end
+
+  if time.hours >= 24 then
+    time.hours = 0
+    time.days = time.days + 1
+  end
+
+  if time.days >= 7 then
+    time.days = 0
+    time.weeks = time.weeks + 1
+  end
+
+  if time.weeks >= 4 then
+    time.weeks = 0
+    time.months = time.months + 1
+  end
+
+  if time.months >= 12 then
+    time.months = 0
+    time.years = time.years + 1
+  end
+
+  return time
+end
+
+return timeTools

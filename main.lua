@@ -1,15 +1,4 @@
 
---! EventCH
-gdt.CPU0.EventChannels[1] = gdt.Wifi0 -- Adding the Wifi chip as the first element of this array, so that it can trigger events for the CPU to handle.
---[[
- This line of code initializes a table named handleFuncs, which maps request handles (numbers) 
-to functions that accept a WifiWebResponseEvent parameter and return nothing 
-(i.e. (result: WifiWebResponseEvent) -> ()).
-This table is used to store functions that should be called when a web request's
-response event is received.
-
-]]--
-local handleFuncs: {[number]: (result: WifiWebResponseEvent) -> ()} = {}
 
 
 --! Assets 
@@ -23,10 +12,12 @@ local bootsnd:AudioSample = gdt.ROM.User.AudioSamples["boot.wav"]
 
 --! Code modules
 local digiCare = require("digiCare")
+local timeTools = require("timeTools")
+local webTools = require("webTools")
 local gfx = require("gfx")
 local dt = require("debugTools")
 local debugPrint = dt.debugPrint
-local createTimer = dt.createTimer
+local createTimer = timeTools.createTimer
 
 
 --! Hardware
@@ -37,26 +28,6 @@ local but0 = gdt.LedButton0 -- bottom button
 local but1 = gdt.LedButton1 -- mid button
 local but2 = gdt.LedButton2 -- top button
 
---!----------------------------------------------------------------------------
---!----   EventCH 1      ------------------------------------------------------
---!----------------------------------------------------------------------------
---[[
- This function is an event handler for the Wifi module, specifically for the WifiWebResponseEvent.
-When this event is triggered, it is passed to this function along with the Wifi module that triggered it.
-The function then looks up a function in the handleFuncs table using the RequestHandle from the event as the key.
-This function is then called with the event as its argument. Finally, the function stored in handleFuncs
-for the given RequestHandle is removed. This allows for the ability to associate a specific function with 
-a specific web request, allowing for better organization and management of web requests in the code.
-]]--
--- This function is an event handler for the Wifi module, specifically for the WifiWebResponseEvent.
--- @param wifi: Wifi - The Wifi module that triggered the event.
--- @param event: WifiWebResponseEvent - The event that was triggered.
-function eventChannel1(_: Wifi, event: WifiWebResponseEvent)
-  handleFuncs[event.RequestHandle](event)
-  handleFuncs[event.RequestHandle] = nil
-end
---!----------------------------------------------------------------------------
-
 
 --? Flag to enable debugging messages
 local debugBool = true
@@ -66,8 +37,6 @@ local room = {
 lights = true, -- room lights if on then true if off then false
 r = 0 -- random number  between (1, 0)
 }
-
-
 
 --? keep track of time deltas and frames
 local timeDlt = {
@@ -92,13 +61,13 @@ local time = {
 }}
 
   --? keep track of digimon position and stats
-  local digimon = {
+local digimon = {
     pos = vec2(35,24), -- possition of Digimon
     r = 0, -- Random value
     sleepTime0 = 0, -- Sleep timer
     looking = 0, -- facing (0 = left, 1 = right)
     sleeping = false -- if its sleeping or not
-  }
+}
   
   --? flush data 
 flush = {
@@ -129,15 +98,15 @@ local menu = {
   -- (9:wip)
   items = {
     {name = "info", action = function() 
-      debugPrint(time, debugBool,"info","Menu position 0 selected") 
+      debugPrint(time, debugBool,"info","Menu position 0 selected")
     end},
     {name = "feed", action = function() 
-      debugPrint(time, debugBool,"info","Menu position 1 selected") 
+      debugPrint(time, debugBool,"info","Menu position 1 selected")
     end},
     {name = "train", action = function() 
       debugPrint(time, debugBool,"info","Menu position 2 selected") 
     end},
-    {name = "challange", action = function() 
+    {name = "quest", action = function() 
       debugPrint(time, debugBool,"info","Menu position 3 selected") 
     end},
     {name = "flush", action = function() 
@@ -152,7 +121,7 @@ local menu = {
         end
       end
     end},
-    {name = "lights", action = function() 
+    {name = "Lights", action = function() 
       debugPrint(time, debugBool,"info","Menu position 5 selected")
       -- turn on and off room lights
       if not room.lights then
@@ -161,7 +130,7 @@ local menu = {
         room.lights = false
       end
     end},
-    {name = "patch", action = function() 
+    {name = "Patch", action = function() 
       debugPrint(time, debugBool,"info","Menu position 6 selected") 
     end},
     {name = "Evo/info Album", action = function() 
@@ -170,7 +139,7 @@ local menu = {
     {name = "Online", action = function() 
       debugPrint(time, debugBool,"info","Menu position 8 selected") 
     end},
-    {name = "wip", action = function() 
+    {name = "Alert", action = function() 
       debugPrint(time, debugBool,"info","Menu position 9 selected") 
     end},
   },
@@ -208,19 +177,10 @@ local poop = {
 
 
 
---* this function sends a GET request to the specified URL and stores the provided function to be called when the request completes.
-local function fetch(wifi: Wifi, url: string, resultFunc: (response: WifiWebResponseEvent) -> ())
-  local handle = wifi:WebGet(url)
-  handleFuncs[handle] = resultFunc
-end
 
 
-
---* draws the cursor at the position
-function drawSelSprite()
-    vid:DrawSprite(cursor.pos, menuSprites, 5, 1, color.white, color.clear)
-end
-
+--* this function handles the cursor position
+--$ the object this function is attached to is menu and cursor
 function CursorHandler()
     -- everytime the button is clicked
     menu.current += 1 -- menu position add 1
@@ -240,77 +200,11 @@ function CursorHandler()
 end
 
 
---* this function will move the digimon once and a while
-function digimonMover()
-    
-  if not digimon.sleeping then
-    -- random number for looking left or right
-    digimon.looking = math.random()
-    
-    -- if its above 0.5 we move it 5 units else we go back 5 units
-    if digimon.looking < 0.5 then
-        
-        
-        digimon.pos += vec2(5, 0) 
-    else
-        
-        digimon.pos -= vec2(5, 0)
-    end
-  end
-    
-end
-
---* this function will handdle the digimon stats and needs
-function digimonHandler()
-  -- digimon time counter
-  digimon.sleepTime0 += gdt.CPU0.DeltaTime
-
-  -- Clamp the value of sleepTime0 to a range of 0 to 28800 (8 hours)
-  digimon.sleepTime0 = math.clamp(digimon.sleepTime0, 0, 28800)
-
-  --$ Check if the digimon is currently sleeping
-  if digimon.sleeping then
-    -- If the digimon has been sleeping for at least 2 hours, set sleeping to false
-    if digimon.sleepTime0 >= 7200 then
-      digimon.sleepTime0 -= 7200
-      digimon.sleeping = false
-    end
-  else
-    -- If the digimon has been awake for at least 8 hours, set sleeping to true
-    if digimon.sleepTime0 >= 28800 then
-      digimon.sleepTime0 -= 28800
-      digimon.sleeping = true
-    end --$ endof if digimon been awake for 8 hours
-  end --$ endof digimon.sleeping check
-
-end
 
 
 
---* this is like a vibe check but to see if you shat yourself
-function poopCheck()
-
-
-  if not digimon.sleeping then
-    
-    --$ check if conditon  poop value is 10800, check if condition poop.r is 21  
-    if poop.value >= 10800 then
-      gdt.AudioChip0:Play(shitsing,1)
-      poop.r = math.random( 2, 10)
-      poop.hasHappend = true
-      poop.value = 0
-    end -- $ endof if poop condition
-  end -- $ endof sleep Check
-end 
-
---* this function will draw poop if digimon has done the peepee poopoo caacaa
-function drawPoop()
-
-    if poop.hasHappend then
-    vid:DrawSprite(poop.pos + vec2(poop.r,0) + vec2(flush.posX - 55,0), menuSprites, 6, poop.anim, color.white, color.clear)
-    end
-end
-
+--* this function checks if we made a request to flush
+--$ the object this function is attached to is flush, poop and it uses debugprint
 function flushPoop()
   --* check if we made a flush request
   if flush.queue > 0.5 then
@@ -330,7 +224,7 @@ function flushPoop()
       poop.value = 0
       debugPrint(time, debugBool,"info", "poop has been flushed")
       else
-        debugPrint(time, debugBool,"info", "pressed flush with no shit")
+        debugPrint(time, debugBool,"info", "pressed flush with no shit") -- what a funny print
       end
       --$ endof poophashappend
     end
@@ -340,204 +234,24 @@ function flushPoop()
 end
 
 
---! $$$$$$$$$$ MAKE SOME SENSE OUT OF THIS BULL %%%%%%%%
--- This function takes two arguments:
--- @param delay is the amount of time to wait between each action
--- @param actions is a table containing the actions to perform, in the order they should be performed
-function animate(delay, actions)
-  -- Initialize a counter variable to keep track of the current action
-  local i = 1
-  -- Initialize a variable to store the elapsed time
-  local elapsedTime = 0
-
-  -- This function will be returned and can be used to update the animation
-  return function()
-    -- Increment the elapsed time by the delta time
-    elapsedTime = elapsedTime + gdt.CPU0.DeltaTime
-    -- Check if the elapsed time is greater than or equal to the delay
-    if elapsedTime >= delay then
-      -- Reset the elapsed time
-      elapsedTime = elapsedTime - delay
-      -- Perform the current action
-      actions[i]()
-      -- Increment the counter
-      i = i + 1
-      -- Check if we've reached the end of the list of actions
-      if i > #actions then
-        -- If we have, reset the counter
-        i = 1
-      end
-    end
-  end
-end
-
-
-
-
-
-
-
-
-
-
---* this function will increment the time
-function incrementTime()
-  time.seconds = time.seconds + 1
-
-  if time.seconds >= 60 then
-    time.seconds = 0
-    time.minutes = time.minutes + 1
-  end
-
-  if time.minutes >= 60 then
-    time.minutes = 0
-    time.hours = time.hours + 1
-  end
-
-  if time.hours >= 24 then
-    time.hours = 0
-    time.days = time.days + 1
-  end
-
-  if time.days >= 7 then
-    time.days = 0
-    time.weeks = time.weeks + 1
-  end
-
-  if time.weeks >= 4 then
-    time.weeks = 0
-    time.months = time.months + 1
-  end
-
-  if time.months >= 12 then
-    time.months = 0
-    time.years = time.years + 1
-  end
-end
-
---*  we do some colision checking in the rectangle
---* Check if digimon is inside box
-function colision()
-  -- we check if we moved out of bounds and reset it to wall values
-  if digimon.pos.X < 0 then
-
-     digimon.pos = vec2(3, 24)
-  elseif digimon.pos.X > 71 then
-
-     digimon.pos = vec2(60, 24)
-  end
-end
-
---* this function will spread the timestamp to the time table
--- @param timestamp_str is the timestamp string
-function spreadTimestamp(timestamp_str)
-  debugPrint(time, debugBool,"info", "timestamp_str: " .. timestamp_str)
-  -- it should have a time format like this "datetime: 2023-04-17T23:26:15.425179-03:00" it has 32 characters for the timestamp
-  -- we use the find function to find the datetime: and then we add 9 to get the start of the timestamp 
-  local start = timestamp_str:find("datetime: ") + 10
-  -- now we use the start and it has 32 characters
-  local datetime = timestamp_str:sub(start, start + 32)
-  debugPrint(time, debugBool,"info", "datetime: " .. datetime)
-  --the pattern is "YYYY-MM-DDTHH:MM:SS.000000-00:00"
-  -- we use the sub function to get the year, month, day, hour, minute and second
-  time.years = tonumber(datetime:sub(1, 4))
-  debugPrint(time, debugBool,"info", "time.years: " .. datetime:sub(1, 4))
-  time.months = tonumber(datetime:sub(6, 7))
-  debugPrint(time, debugBool,"info", "time.months: " .. datetime:sub(6, 7))
-  time.days = tonumber(datetime:sub(9, 10))
-  debugPrint(time, debugBool,"info", "time.days: " .. datetime:sub(9, 10))
-  time.hours = tonumber(datetime:sub(12, 13))
-  debugPrint(time, debugBool,"info", "time.hours: " .. datetime:sub(12, 13))
-  time.minutes = tonumber(datetime:sub(15, 16))
-  debugPrint(time, debugBool,"info", "time.minutes: " .. datetime:sub(15, 16))
-  time.seconds = tonumber(datetime:sub(18, 19))
-  debugPrint(time, debugBool,"info", "time.seconds: " .. datetime:sub(18, 19))
-  
-end
-
---* this function will get the current time from the web
-local function getTimeFromWeb()
-  debugPrint(time, debugBool,"info", "TIME IS UPDATING...")
-  time.health.updating = true
-  -- Retrieve the current Unix timestamp from the custom API
-  -- Get IP  to trow at custom api 
-  fetch(web, "https://api64.ipify.org/", function(response)
-    -- print ip response to see if we got the right thing
-    local ip = response.Text
-    debugPrint(time, debugBool,"info", "GOT IP", ip )
-    if tonumber(ip:sub(1, 1)) then
-      time.health.condition = true
-      
-      fetch(web, "http://worldtimeapi.org/api/ip/" .. ip .. ".txt" , function(response)
-        --[[
-          (... etc ...) is a indicatior that the text is cut off
-        responds with a text like this:
-        ... etc ...
-          datetime: 2023-04-17T23:26:15.425179-03:00
-        ... etc ...
-        ]]   
-        print(response.Text)
-        local time_string = response.Text
-        debugPrint(time, debugBool,"info","GOT WEBTextTime" ,time_string)
-        -- here we do a check to see if we got a valid response
-
-          singleChar = time_string:sub(1,1)
-          debugPrint(time, debugBool,"info", "GOT", singleChar)
-          -- now we check if its alphabetic with our function
-        if singleChar == "a" then
-          time.health.condition = true
-          debugPrint(time, debugBool,"info", "TIME HAS BEEN UPDATED")
-          spreadTimestamp(time_string)
-        else
-          time.health.condition = false
-          -- There was an error with the request
-          debugPrint(time, debugBool,"error", "WEB Error wait 1 minute\nWe got: ", response.Status, response.Text)
-          -- we wait 1 minute before trying again
-          time.health.updating = false
-        end
-      end)
-    else
-      debugPrint(time, debugBool,"error", "GOT", response.Text)
-
-    end
-  end)
-  
-end
-
 
 
 
 --* this variable will count up to 8004 and then reset to 0 to run the time update
 local webtimeC = 0
 
---* this function will run a function every x times
--- @param func is the function to run
--- @param counting is the counter
--- @param ends is the number of times to run the function
-function runEvery(func, counting, ends)
-  if counting == 0 then
-    -- do something here
-    func()
-  end
-  counting = counting + 1
-  if counting == ends then
-    counting = 0
-  end
-  return counting
-end
-
 
 local timer = createTimer(
     gdt.CPU0,
     0.5,
     function() 
-        webtimeC = runEvery(function()
-          getTimeFromWeb()
+        webtimeC = timeTools.runEvery(function()
+         time = webTools.getTimeFromWeb(time)
         end,
           webtimeC,
           8004 -- 2 hours and 13 minutes
         )
-        incrementTime()
+        time = timeTools.incrementTime(time)
         -- add 1 to the poop value
         poop.value += 1
         -- keeps track of time
@@ -545,7 +259,7 @@ local timer = createTimer(
         digimon.r = math.random(0, 1) 
         poop.anim = math.random(2, 3)
         room.r = math.random(0, 1) 
-        digimonMover()
+        digimon = digiCare.digimonMover(digimon)
         flushPoop()
         
     end
@@ -569,7 +283,7 @@ local debugTimer = createTimer(
         local countRestart = 0
         countRestart += 1
         if countRestart == 12 then
-          getTimeFromWeb()
+          time = webTools.getTimeFromWeb(time)
         end
       end --$ endof timeHealth check
 end)
@@ -599,16 +313,16 @@ function update()
   timeDlt.counter += gdt.CPU0.DeltaTime
 
   -- does colision for digimon
-  colision()
+  digimon = digiCare.colision(digimon)
   
   -- handdler for digimon stuff
-  digimonHandler()
+  digimon = digicare.digimonHandler(digimon)
   
   -- checks if you shat yourself
-  poopCheck()
+  poop = digiCare.poopCheck(digimon, poop)
   
-  -- draw funny poopoo
-  drawPoop()
+  -- draw funny poopoo.... uhhhh
+  gfx.drawPoop(poop)
   
   -- draws the little waves to flush shit
   gfx.drawflush(flush)
@@ -616,12 +330,11 @@ function update()
   -- draws the digimon
   gfx.drawDigimon(digimon)
   
-  
   -- this function will draw the menu sprites
   gfx.drawMenuSprites(digimon, room)
   
   -- draws the cursor
-  drawSelSprite()
+  gfx.drawSelSprite(cursor)
  
 
   if but2.ButtonDown then

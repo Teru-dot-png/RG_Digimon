@@ -1,0 +1,117 @@
+
+
+
+--! EventCH
+gdt.CPU0.EventChannels[1] = gdt.Wifi0 -- Adding the Wifi chip as the first element of this array, so that it can trigger events for the CPU to handle.
+--[[
+ This line of code initializes a table named handleFuncs, which maps request handles (numbers) 
+to functions that accept a WifiWebResponseEvent parameter and return nothing 
+(i.e. (result: WifiWebResponseEvent) -> ()).
+This table is used to store functions that should be called when a web request's
+response event is received.
+
+]]--
+local handleFuncs: {[number]: (result: WifiWebResponseEvent) -> ()} = {}
+
+
+--! Code modules
+local digiCare = require("digiCare")
+local timeTools = require("timeTools")
+local dt = require("debugTools")
+local debugPrint = dt.debugPrint
+local spreadTimestamp = timeTools.spreadTimestamp
+
+--! Hardware
+local cpu:CPU = gdt.CPU0
+local web:Wifi = gdt.Wifi0 -- wifi web conectivity
+
+--!----------------------------------------------------------------------------
+--!----   EventCH 1      ------------------------------------------------------
+--!----------------------------------------------------------------------------
+--[[
+ This function is an event handler for the Wifi module, specifically for the WifiWebResponseEvent.
+When this event is triggered, it is passed to this function along with the Wifi module that triggered it.
+The function then looks up a function in the handleFuncs table using the RequestHandle from the event as the key.
+This function is then called with the event as its argument. Finally, the function stored in handleFuncs
+for the given RequestHandle is removed. This allows for the ability to associate a specific function with 
+a specific web request, allowing for better organization and management of web requests in the code.
+]]--
+-- This function is an event handler for the Wifi module, specifically for the WifiWebResponseEvent.
+-- @param wifi: Wifi - The Wifi module that triggered the event.
+-- @param event: WifiWebResponseEvent - The event that was triggered.
+function eventChannel1(_: Wifi, event: WifiWebResponseEvent)
+  handleFuncs[event.RequestHandle](event)
+  handleFuncs[event.RequestHandle] = nil
+end
+--!----------------------------------------------------------------------------
+
+--* this function sends a GET request to the specified URL and stores the provided function to be called when the request completes.
+local function fetch(wifi: Wifi, url: string, resultFunc: (response: WifiWebResponseEvent) -> ())
+    local handle = wifi:WebGet(url)
+    handleFuncs[handle] = resultFunc
+  end
+  
+  local debugBool = true
+
+local webTools = {}
+
+
+--* this function will get the current time from the web
+-- @param time is the time table
+-- @param web is the web object
+-- @param debugBool is a boolean to enable or disable debug prints
+--$ this function is dependant on the spreadTimestamp function and the debugPrint function and the fetch function and is conected to theese objects: time, web, debugBool
+function webTools.getTimeFromWeb(time)
+    debugPrint(time, debugBool,"info", "TIME IS UPDATING...")
+    time.health.updating = true
+    -- Retrieve the current timestamp from the API
+    -- Get IP  to trow at api 
+    fetch(web, "https://api64.ipify.org/", function(response)
+      -- print ip response to see if we got the right thing
+      local ip = response.Text
+      debugPrint(time, debugBool,"info", "GOT IP", ip )
+      if tonumber(ip:sub(1, 1)) then
+        time.health.condition = true
+        
+        fetch(web, "http://worldtimeapi.org/api/ip/" .. ip .. ".txt" , function(response)
+          --[[
+            (... etc ...) is a indicatior that the text is cut off
+          responds with a text like this:
+          ... etc ...
+            datetime: 2023-04-17T23:26:15.425179-03:00
+          ... etc ...
+          ]]   
+          print(response.Text)
+          local time_string = response.Text
+          debugPrint(time, debugBool,"info","GOT WEBTextTime" ,time_string)
+          -- here we do a check to see if we got a valid response
+            singleChar = time_string:sub(1,1)
+            debugPrint(time, debugBool,"info", "GOT", singleChar)
+            -- now we check if its we got a valid response by checking if the first character is a "a" cause the response starts with "a" for abreviation
+            -- if it is we update the time and if not we wait 1 minute and try again
+          if singleChar == "a" then
+            time.health.condition = true
+            debugPrint(time, debugBool,"info", "TIME HAS BEEN UPDATED")
+            time = spreadTimestamp(time_string, time)
+          else
+            time.health.condition = false
+            -- There was an error with the request
+            debugPrint(time, debugBool,"error", "WEB Error wait 1 minute\nWe got: ", response.Status, response.Text)
+            -- we wait 1 minute before trying again
+            time.health.updating = false
+          end
+        end)
+      else
+        debugPrint(time, debugBool,"error", "GOT", response.Text)
+  
+      end
+    end)
+    return time
+  end
+
+
+
+
+
+
+return webTools

@@ -9,6 +9,12 @@ local menuSprites:SpriteSheet = gdt.ROM.User.SpriteSheets.Digimon1 -- Menu Sprit
 local digimonSprites:SpriteSheet = gdt.ROM.User.SpriteSheets.digimonNIGHTMARE1 -- digimon Sprites looking left
 local digimonSpritesFlip:SpriteSheet = gdt.ROM.User.SpriteSheets.digimonNIGHTMARE1Flip -- digimon Sprites looking right
 
+--! Code modules
+local timeTools = require("timeTools")
+local dt = require("debugTools")
+local debugPrint = dt.debugPrint
+local createTimer = timeTools.createTimer
+
 
 --? Background values
 local _darkRoom = 5 -- We change to dark room set of sprites
@@ -42,7 +48,20 @@ function gfx.drawDigimon(digimon)
     end
  end
  
+--* draws the cursor at the position
+--$ the object this function is attached to is cursor and it uses the vid
+function gfx.drawSelSprite(cursor)
+  vid:DrawSprite(cursor.pos, menuSprites, 5, 1, color.white, color.clear)
+end
 
+--* this function will draw poop if digimon has done the peepee poopoo caacaa
+--$ the object this function is attached to is poop, vid and it uses the menuSprites
+function gfx.drawPoop(poop)
+
+  if poop.hasHappend then
+  vid:DrawSprite(poop.pos + vec2(poop.r,0) + vec2(flush.posX - 55,0), menuSprites, 6, poop.anim, color.white, color.clear)
+  end
+end
 
 --* draws the thing that flushes the shiz
 function gfx.drawflush(flush)
@@ -98,7 +117,7 @@ function gfx.drawbg(room)
               vid:DrawSprite(digimon.pos + vec2(15, room.r), menuSprites, 6, room.r, color.white, color.clear)
           else
               -- If the digimon is not sleeping, and lights are of it will get angry (draw "#" angry symbol)
-              vid:DrawSprite(digimon.pos + vec2(15, room.r), menuSprites, 7, 2, color.white, color.clear)
+              vid:DrawSprite(digimon.pos + vec2(15, room.r), menuSprites, 7, 3, color.white, color.clear)
           end
   
           -- If the room lights are on

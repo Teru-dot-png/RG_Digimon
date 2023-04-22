@@ -1,34 +1,13 @@
--- debugTools.lua
-
 local debugTools = {} -- create an empty table to store the functions
 
-function debugTools.createTimer(cpu: CPU, interval: number, func: (totalTime: number) -> ())
-    local startTime = cpu.Time
-    local lastInterval = startTime
-  
-    return {
-        update = function()
-            if(cpu.Time - lastInterval) >= interval then 
-                lastInterval = cpu.Time
-                func(cpu.Time - startTime)
-            end
-        end,
-        getTotalTime = function()
-            return cpu.Time - startTime
-        end,
-    }
-  end
-
 function debugTools.debugPrint(time, debugB, level, ...)
-
     -- Only show debugging messages if the `debug` flag is set to `true`
     if debugB then
-
         -- Add timestamps to the output
         if time == nil then
-         timestamp = "[nil:nil:nil]"
+            timestamp = "[nil:nil:nil]"
         else
-         timestamp = string.format("[%02d:%02d:%02d]", time.hours, time.minutes, time.seconds)
+            timestamp = string.format("[%02d:%02d:%02d]", time.hours, time.minutes, time.seconds)
         end
 
         if level == "error" then

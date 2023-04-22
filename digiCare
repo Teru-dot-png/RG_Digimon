@@ -3,12 +3,22 @@ local cpu:CPU = gdt.CPU0
 local vid:VideoChip = gdt.VideoChip0 -- graphics chip
 local web:Wifi = gdt.Wifi0 -- wifi web conectivity
 
+--! Assets
+local menuSprites:SpriteSheet = gdt.ROM.User.SpriteSheets.Digimon1 -- Menu Sprites for main game
+local bgs:SpriteSheet = gdt.ROM.User.SpriteSheets.bgs -- Background sprites for the game
+local digimonSprites:SpriteSheet = gdt.ROM.User.SpriteSheets.digimonNIGHTMARE1 -- digimon Sprites looking left
+local digimonSpritesFlip:SpriteSheet = gdt.ROM.User.SpriteSheets.digimonNIGHTMARE1Flip -- digimon Sprites looking right
+local shitsing:AudioSample = gdt.ROM.User.AudioSamples["shitsing.wav"]
+local flushing:AudioSample = gdt.ROM.User.AudioSamples["flushing.wav"]
+local bootsnd:AudioSample = gdt.ROM.User.AudioSamples["boot.wav"]
+
 
 --! Code modules
+local timeTools = require("timeTools")
+local gfx = require("gfx")
 local dt = require("debugTools")
 local debugPrint = dt.debugPrint
-local createTimer = dt.createTimer
-
+local createTimer = timeTools.createTimer
 
 
 
@@ -20,4 +30,89 @@ debugPrint(nil,true,"warning","WIP NOT FINISHED")
 
 end
 
+
+--* this function will handdle the digimon stats and needs
+--$ the object this function is attached to is digimon and gdt
+function digiCare.digimonHandler(digimon)
+  -- digimon time counter
+  digimon.sleepTime0 += gdt.CPU0.DeltaTime
+
+  -- Clamp the value of sleepTime0 to a range of 0 to 28800 (8 hours)
+  digimon.sleepTime0 = math.clamp(digimon.sleepTime0, 0, 28800)
+
+  --$ Check if the digimon is currently sleeping
+  if digimon.sleeping then
+    -- If the digimon has been sleeping for at least 2 hours, set sleeping to false
+    if digimon.sleepTime0 >= 7200 then
+      digimon.sleepTime0 -= 7200
+      digimon.sleeping = false
+    end
+  else
+    -- If the digimon has been awake for at least 8 hours, set sleeping to true
+    if digimon.sleepTime0 >= 28800 then
+      digimon.sleepTime0 -= 28800
+      digimon.sleeping = true
+    end --$ endof if digimon been awake for 8 hours
+  end --$ endof digimon.sleeping check
+ return digimon
+end
+
+--* this function will move the digimon once and a while
+--$ the object this function is attached to is digimon
+function digiCare.digimonMover(digimon)
+    
+  if not digimon.sleeping then
+    -- random number for looking left or right
+    digimon.looking = math.random()
+    
+    -- if its above 0.5 we move it 5 units else we go back 5 units
+    if digimon.looking < 0.5 then
+        
+        
+        digimon.pos += vec2(5, 0) 
+    else
+        
+        digimon.pos -= vec2(5, 0)
+    end
+  end
+    return digimon
+end
+
+--*  we do some colision checking in the rectangle
+--* Check if digimon is inside box
+--$ the object this function is attached to is digimon
+function digiCare.colision(digimon)
+    -- we check if we moved out of bounds and reset it to wall values
+    if digimon.pos.X < 0 then
+  
+       digimon.pos = vec2(3, 24)
+    elseif digimon.pos.X > 71 then
+  
+       digimon.pos = vec2(60, 24)
+    end
+    return digimon
+  end
+  
+
+
+
+
+--* this is like a vibe check but to see if you shat yourself
+--$ the object this function is attached to is poop, digimon and gdt
+function digiCare.poopCheck(digimon, poop)
+
+
+    if not digimon.sleeping then
+      
+      --$ check if conditon  poop value is 10800, check if condition poop.r is 21  
+      if poop.value >= 10800 then
+        gdt.AudioChip0:Play(shitsing,1)
+        poop.r = math.random( 2, 10)
+        poop.hasHappend = true
+        poop.value = 0
+      end -- $ endof if poop condition
+    end -- $ endof sleep Check
+    return poop
+  end 
+  
 return digiCare
